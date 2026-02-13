@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reportes</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top__inner">
+    <div class="brand">
+      <div class="brand__logo">A</div>
+      <div>
+        <div class="brand__name">Reportes</div>
+        <div class="brand__sub">Día / Mes • pagos • export CSV</div>
+      </div>
+    </div>
+    <div class="row">
+      <a class="btn" href="./index.html">Volver</a>
+      <button class="btn btn--primary" id="btnExport">Exportar CSV</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="section">
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <h3 style="margin:0 0 6px">Filtro</h3>
+        <div class="muted">Elegí día o mes. Los totales se recalculan.</div>
+      </div>
+      <div class="row" style="gap:10px">
+        <div style="width:180px">
+          <label>Modo</label>
+          <select id="mode">
+            <option value="DAY">Día</option>
+            <option value="MONTH">Mes</option>
+          </select>
+        </div>
+        <div style="width:200px">
+          <label id="lblDate">Fecha</label>
+          <input id="date" type="date" />
+        </div>
+        <div style="width:200px; display:none" id="monthBox">
+          <label>Mes</label>
+          <input id="month" type="month" />
+        </div>
+        <button class="btn" id="btnRefresh" style="align-self:end">Actualizar</button>
+      </div>
+    </div>
+
+    <div class="section" style="padding:10px;margin-top:12px">
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><span class="muted">Ventas</span><div><strong id="kSales">0</strong></div></div>
+        <div><span class="muted">Total</span><div><strong id="kTotal">$0</strong></div></div>
+        <div><span class="muted">Ticket prom.</span><div><strong id="kAvg">$0</strong></div></div>
+        <div><span class="muted">Efectivo</span><div><strong id="kCash">$0</strong></div></div>
+        <div><span class="muted">MP</span><div><strong id="kMP">$0</strong></div></div>
+        <div><span class="muted">DNI</span><div><strong id="kDNI">$0</strong></div></div>
+        <div><span class="muted">Tarjeta</span><div><strong id="kCard">$0</strong></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div>
+        <h3 style="margin:0 0 6px">Ventas</h3>
+        <div class="muted">Últimas 200 del filtro.</div>
+      </div>
+      <div style="width:320px">
+        <label>Buscar (producto o ID)</label>
+        <input id="q" placeholder="Ej: azúcar, sale_..." />
+      </div>
+    </div>
+
+    <div style="overflow:auto;margin-top:12px">
+      <table class="table" id="tblSales">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>ID</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Pagos</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 6px">Top productos</h3>
+    <div class="muted">Por cantidad vendida (decimales incluidos).</div>
+
+    <div style="overflow:auto;margin-top:12px">
+      <table class="table" id="tblTop">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>$ Vendido</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="./js/app.js"></script>
+<script>
+    App.guardPage(App.PERMS.admin_or_owner);
+
+
+  window.App.ensureSeed();
+
+  const modeEl = document.getElementById("mode");
+  const dateEl = document.getElementById("date");
+  const monthEl = document.getElementById("month");
+  const monthBox = document.getElementById("monthBox");
+  const btnRefresh = document.getElementById("btnRefresh");
+  const btnExport = document.getElementById("btnExport");
+  const qEl = document.getElementById("q");
+
+  const kSales = document.getElementById("kSales");
+  const kTotal = document.getElementById("kTotal");
+  const kAvg = document.getElementById("kAvg");
+  const kCash = document.getElementById("kCash");
+  const kMP = document.getElementById("kMP");
+  const kDNI = document.getElementById("kDNI");
+  const kCard = document.getElementById("kCard");
+
+  const tbodySales = document.querySelector("#tblSales tbody");
+  const tbodyTop = document.querySelector("#tblTop tbody");
+
+  function ymd(d){
+    const dt = new Date(d);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,"0");
+    const da = String(dt.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  }
+  function ym(d){
+    const dt = new Date(d);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,"0");
+    return `${y}-${m}`;
+  }
+
+  function getFilteredSales(){
+    const sales = App.getSales();
+    const mode = modeEl.value;
+
+    if(mode === "DAY"){
+      const day = dateEl.value || ymd(new Date());
+      return sales.filter(s => ymd(s.createdAt) === day);
+    }else{
+      const m = monthEl.value || ym(new Date());
+      return sales.filter(s => ym(s.createdAt) === m);
+    }
+  }
+
+  function sumPayments(list){
+    return list.reduce((acc, s)=>{
+      const p = s.payments || {};
+      acc.cash += App.num(p.cash);
+      acc.mp   += App.num(p.mp);
+      acc.dni  += App.num(p.dni);
+      acc.card += App.num(p.card);
+      return acc;
+    }, {cash:0, mp:0, dni:0, card:0});
+  }
+
+  function renderKPIs(list){
+    const total = list.reduce((a,s)=>a+App.num(s.total),0);
+    const avg = list.length ? total / list.length : 0;
+    const pay = sumPayments(list);
+
+    kSales.textContent = String(list.length);
+    kTotal.textContent = App.money(total);
+    kAvg.textContent = App.money(avg);
+    kCash.textContent = App.money(pay.cash);
+    kMP.textContent = App.money(pay.mp);
+    kDNI.textContent = App.money(pay.dni);
+    kCard.textContent = App.money(pay.card);
+  }
+
+  function renderSalesTable(list){
+    const q = qEl.value.trim().toLowerCase();
+    let filtered = list;
+
+    if(q){
+      filtered = list.filter(s=>{
+        const id = (s.id||"").toLowerCase();
+        const items = (s.items||[]).map(i=> (i.name||"").toLowerCase()).join(" ");
+        return id.includes(q) || items.includes(q);
+      });
+    }
+
+    tbodySales.innerHTML = "";
+    filtered.slice(0,200).forEach(s=>{
+      const itemsCount = (s.items||[]).length;
+      const pays = s.payments || {};
+      const payTxt = `Ef ${App.money(pays.cash)} • MP ${App.money(pays.mp)} • DNI ${App.money(pays.dni)} • T ${App.money(pays.card)}`;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><small>${new Date(s.createdAt).toLocaleString("es-AR")}</small></td>
+        <td><small>${s.id}</small></td>
+        <td>${itemsCount}</td>
+        <td><strong>${App.money(s.total)}</strong></td>
+        <td><small>${payTxt}</small></td>
+      `;
+      tbodySales.appendChild(tr);
+    });
+
+    if(!filtered.length){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="5" class="muted" style="padding:14px 8px">Sin ventas en el filtro.</td>`;
+      tbodySales.appendChild(tr);
+    }
+  }
+
+  function renderTopProducts(list){
+    const map = new Map(); // name -> {qty, amount}
+    list.forEach(s=>{
+      (s.items||[]).forEach(it=>{
+        const name = it.name || "Sin nombre";
+        const qty = App.num(it.qty);
+        const amount = App.num(it.subtotal ?? (qty * App.num(it.unitPrice)));
+        const cur = map.get(name) || {qty:0, amount:0};
+        cur.qty += qty;
+        cur.amount += amount;
+        map.set(name, cur);
+      });
+    });
+
+    const arr = Array.from(map.entries())
+      .map(([name,v])=>({name, qty:v.qty, amount:v.amount}))
+      .sort((a,b)=> b.qty - a.qty);
+
+    tbodyTop.innerHTML = "";
+    arr.slice(0,50).forEach(r=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${r.name}</strong></td>
+        <td>${App.roundQty(r.qty)}</td>
+        <td>${App.money(r.amount)}</td>
+      `;
+      tbodyTop.appendChild(tr);
+    });
+
+    if(!arr.length){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="3" class="muted" style="padding:14px 8px">Sin datos.</td>`;
+      tbodyTop.appendChild(tr);
+    }
+  }
+
+  function csvEscape(v){
+    const s = String(v ?? "");
+    if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+    return s;
+  }
+
+  function exportCSV(list){
+    // 1 fila por item (más útil para Excel)
+    const rows = [];
+    rows.push([
+      "Fecha","VentaID","Producto","Cantidad","PrecioUnit","SubtotalItem","DescuentoVenta","TotalVenta",
+      "PagoEfectivo","PagoMP","PagoDNI","PagoTarjeta"
+    ]);
+
+    list.forEach(s=>{
+      const p = s.payments || {};
+      const dt = new Date(s.createdAt).toLocaleString("es-AR");
+      (s.items||[]).forEach(it=>{
+        rows.push([
+          dt,
+          s.id,
+          it.name,
+          App.roundQty(it.qty),
+          App.num(it.unitPrice),
+          App.num(it.subtotal ?? (App.num(it.qty)*App.num(it.unitPrice))),
+          App.num(s.discount),
+          App.num(s.total),
+          App.num(p.cash),
+          App.num(p.mp),
+          App.num(p.dni),
+          App.num(p.card)
+        ]);
+      });
+    });
+
+    const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    const mode = modeEl.value === "DAY" ? (dateEl.value || ymd(new Date())) : (monthEl.value || ym(new Date()));
+    a.href = url;
+    a.download = `reporte_${modeEl.value.toLowerCase()}_${mode}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function refresh(){
+    const list = getFilteredSales().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+    renderKPIs(list);
+    renderSalesTable(list);
+    renderTopProducts(list);
+    return list;
+  }
+
+  function toggleMode(){
+    if(modeEl.value === "DAY"){
+      monthBox.style.display = "none";
+      dateEl.style.display = "";
+    }else{
+      monthBox.style.display = "";
+      dateEl.style.display = "none";
+    }
+  }
+
+  // init defaults
+  dateEl.value = ymd(new Date());
+  monthEl.value = ym(new Date());
+
+  modeEl.addEventListener("change", ()=>{ toggleMode(); refresh(); });
+  btnRefresh.addEventListener("click", refresh);
+  qEl.addEventListener("input", refresh);
+  btnExport.addEventListener("click", ()=> exportCSV(refresh()));
+
+  toggleMode();
+  refresh();
+</script>
+</body>
+</html>

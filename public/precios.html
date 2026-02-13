@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aumentos de precios</title>
+  <link rel="stylesheet" href="./css/styles.css">
+<script src="./js/app.js"></script>
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Aumentos de precios</div>
+          <div class="brand__sub">Por % (todos o por categoría) + redondeo</div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./productos.html">Productos</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap split">
+    <!-- LEFT -->
+    <section class="section">
+      <h3>Aplicar aumento</h3>
+
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:1">
+          <label>Alcance</label>
+          <select id="scope">
+            <option value="ALL">Todos los productos</option>
+            <option value="CATEGORY">Solo una categoría</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Categoría (si elegís “Solo una categoría”)</label>
+          <input id="category" placeholder="Ej: Bebidas, Almacén..." />
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:1">
+          <label>Porcentaje (%)</label>
+          <input id="percent" type="number" step="0.01" value="10" />
+          <div class="muted" style="margin-top:6px">Ej: 10 = +10% | -5 = baja 5% (si necesitás).</div>
+        </div>
+        <div style="flex:1">
+          <label>Redondeo</label>
+          <select id="rounding">
+            <option value="NONE">Sin redondeo</option>
+            <option value="10">A $10</option>
+            <option value="50">A $50</option>
+            <option value="100">A $100</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:10px">
+        <strong>Vista previa</strong>
+        <div class="muted" id="preview" style="margin-top:6px">—</div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn--danger" id="btnApply" style="flex:1">Aplicar aumento</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px">
+        Nota: esto actualiza los precios en tu lista de productos. Historial queda guardado.
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="section">
+      <h3>Historial de cambios</h3>
+      <div class="muted" style="margin-bottom:10px">Últimos 15 cambios.</div>
+
+      <div style="overflow:auto">
+        <table class="table" id="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>%</th>
+              <th>Red.</th>
+              <th>Items</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <strong>Detalle (último cambio)</strong>
+        <div class="muted" id="detail" style="margin-top:8px">—</div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./js/app.js"></script>
+
+  <script>
+    App.guardPage(App.PERMS.admin_or_owner);
+
+
+    window.App.ensureSeed();
+
+    const scopeEl = document.getElementById("scope");
+    const categoryEl = document.getElementById("category");
+    const percentEl = document.getElementById("percent");
+    const roundingEl = document.getElementById("rounding");
+    const previewEl = document.getElementById("preview");
+
+    const tbody = document.querySelector("#tbl tbody");
+    const detail = document.getElementById("detail");
+
+    function computePreview(){
+      const scope = scopeEl.value;
+      const cat = categoryEl.value.trim().toLowerCase();
+      const list = App.getProducts().filter(p => p.active !== false);
+
+      const target = list
+        .filter(p => scope === "ALL" ? true : (p.category||"").toLowerCase().includes(cat));
+
+      previewEl.textContent = scope === "ALL"
+        ? `Impacta a ${target.length} productos.`
+        : cat ? `Categoría contiene “${categoryEl.value.trim()}” → ${target.length} productos.` : "Elegí una categoría.";
+    }
+
+    function renderHistory(){
+      const list = App.getPriceChanges().slice(0, 15);
+      tbody.innerHTML = "";
+      list.forEach((c, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><small>${new Date(c.createdAt).toLocaleString("es-AR")}</small></td>
+          <td>${c.scope === "ALL" ? "Todos" : ("Cat: " + (c.category || "-"))}</td>
+          <td><strong>${c.percent}%</strong></td>
+          <td><small>${c.rounding}</small></td>
+          <td>${c.count}</td>
+        `;
+        tr.style.cursor = "pointer";
+        tr.onclick = () => showDetail(c);
+        tbody.appendChild(tr);
+
+        if(idx === 0) showDetail(c);
+      });
+
+      if(!list.length){
+        detail.textContent = "—";
+      }
+    }
+
+    function showDetail(change){
+      if(!change) return;
+      const top = (change.items || []).slice(0, 8).map(it => {
+        return `• ${it.name}: ${App.money(it.oldPrice)} → ${App.money(it.newPrice)}`;
+      }).join("<br/>");
+
+      detail.innerHTML = `
+        <div><strong>${change.scope === "ALL" ? "Todos los productos" : ("Categoría: " + (change.category || "-"))}</strong></div>
+        <div class="muted">Aplicado: ${new Date(change.createdAt).toLocaleString("es-AR")}</div>
+        <div class="muted">Porcentaje: ${change.percent}% • Redondeo: ${change.rounding} • Items: ${change.count}</div>
+        <div style="margin-top:8px">${top || "<span class='muted'>Sin detalle</span>"}</div>
+      `;
+    }
+
+    document.getElementById("btnApply").onclick = () => {
+      try{
+        const change = App.applyPriceIncrease({
+          scope: scopeEl.value,
+          category: categoryEl.value,
+          percent: percentEl.value,
+          rounding: roundingEl.value
+        });
+        App.toast(`Aumento aplicado (${change.count} productos) ✅`);
+        computePreview();
+        renderHistory();
+      }catch(err){
+        App.toast(err.message || "Error");
+      }
+    };
+
+    [scopeEl, categoryEl, percentEl, roundingEl].forEach(el => {
+      el.addEventListener("input", computePreview);
+      el.addEventListener("change", computePreview);
+    });
+
+    computePreview();
+    renderHistory();
+  </script>
+</body>
+</html>

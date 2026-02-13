@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ajustes de stock</title>
+  <link rel="stylesheet" href="./css/styles.css">
+<script src="./js/app.js"></script>
+
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Ajustes de stock</div>
+          <div class="brand__sub">Rotura • Vencido • Inventario • Error</div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./movimientos.html">Ver Kardex</a>
+        <button class="btn btn--primary" id="btnFocusScan">Escanear <span class="kbd">F2</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap split">
+    <!-- LEFT -->
+    <section class="section">
+      <h3>Seleccionar producto</h3>
+
+      <div class="row" style="margin-bottom:10px;">
+        <div style="flex:1;min-width:260px">
+          <label>Buscar por nombre</label>
+          <input id="qName" placeholder="Ej: azúcar, coca, queso..." autocomplete="off" />
+          <div class="muted" style="margin-top:6px">
+            Tip: <span class="kbd">F2</span> para escanear (USB) y Enter selecciona.
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <strong>Producto seleccionado</strong>
+          <small class="muted">Click en resultados</small>
+        </div>
+        <div id="selected" class="muted" style="margin-top:8px">—</div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <strong>Resultados</strong>
+          <small class="muted">Máx 10</small>
+        </div>
+        <div id="results" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Hidden scanner input -->
+      <input id="scanInput" style="position:fixed;left:-9999px;opacity:0" autocomplete="off" />
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="section">
+      <h3>Aplicar ajuste</h3>
+
+      <label>Modo de ajuste</label>
+      <select id="mode">
+        <option value="DELTA">Ajustar por diferencia (+ / -)</option>
+        <option value="SET">Setear stock exacto (inventario físico)</option>
+      </select>
+
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1" id="deltaBox">
+          <label>Diferencia (delta) con decimales</label>
+          <input id="delta" type="number" step="0.001" value="0.000" />
+          <div class="muted" style="margin-top:6px">
+            Ej: <strong>+2.500</strong> suma / <strong>-1.000</strong> resta
+          </div>
+        </div>
+
+        <div style="flex:1; display:none" id="setBox">
+          <label>Stock real (nuevo stock)</label>
+          <input id="newStock" type="number" step="0.001" min="0" value="0.000" />
+          <div class="muted" style="margin-top:6px">
+            Se calcula la diferencia y se registra como ajuste.
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <label>Motivo</label>
+          <select id="reason">
+            <option value="Rotura">Rotura</option>
+            <option value="Vencido">Vencido</option>
+            <option value="Inventario">Inventario</option>
+            <option value="Error de carga">Error de carga</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Nota (opcional)</label>
+          <input id="note" placeholder="Ej: se rompieron 2 latas" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn--danger" id="btnApply" style="flex:1">Aplicar ajuste <span class="kbd">F9</span></button>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <strong>Tips</strong>
+        <div class="muted" style="margin-top:6px">
+          • Ajustes quedan en Kardex como <strong>ADJ</strong><br/>
+          • Usá “Setear stock exacto” cuando contás mercadería
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./js/app.js"></script>
+
+  <script>
+    App.guardPage(App.PERMS.admin_or_owner);
+
+
+    window.App.ensureSeed();
+
+    const qName = document.getElementById("qName");
+    const results = document.getElementById("results");
+    const selected = document.getElementById("selected");
+    const scanInput = document.getElementById("scanInput");
+
+    const mode = document.getElementById("mode");
+    const deltaBox = document.getElementById("deltaBox");
+    const setBox = document.getElementById("setBox");
+    const deltaEl = document.getElementById("delta");
+    const newStockEl = document.getElementById("newStock");
+    const reasonEl = document.getElementById("reason");
+    const noteEl = document.getElementById("note");
+
+    let selectedProductId = null;
+
+    function setSelected(p){
+      selectedProductId = p?.id || null;
+      if(!p){
+        selected.textContent = "—";
+        return;
+      }
+      selected.innerHTML = `
+        <strong>${p.name}</strong><br/>
+        <small>Cat: ${p.category || "-"} • Stock actual: ${App.roundQty(p.stock)} • Mín: ${App.roundQty(p.minStock||0)}</small><br/>
+        <small>Código: ${p.barcode || "-"}</small>
+      `;
+      // en modo SET, prellenar con stock actual para editar rápido
+      newStockEl.value = App.roundQty(p.stock);
+    }
+
+    function renderResults(list){
+      results.innerHTML = "";
+      const box = document.createElement("div");
+      box.style.display = "grid";
+      box.style.gridTemplateColumns = "1fr";
+      box.style.gap = "8px";
+
+      list.slice(0, 10).forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.style.textAlign = "left";
+        btn.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <div>
+              <strong>${p.name}</strong>
+              <div><small>${p.category || "Sin categoría"} • Stock: ${App.roundQty(p.stock)}</small></div>
+            </div>
+            <div style="white-space:nowrap"><small>${p.barcode || ""}</small></div>
+          </div>
+        `;
+        btn.onclick = () => {
+          setSelected(p);
+          App.toast("Producto seleccionado");
+        };
+        box.appendChild(btn);
+      });
+
+      if(!list.length){
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.textContent = "Sin resultados.";
+        box.appendChild(empty);
+      }
+      results.appendChild(box);
+
+      setSelected(list[0] || null);
+    }
+
+    function updateResults(){
+      renderResults(App.searchProductsByName(qName.value));
+    }
+
+    function focusScan(){
+      scanInput.value = "";
+      scanInput.focus();
+      App.toast("Listo para escanear (Enter selecciona)");
+    }
+
+    scanInput.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        const code = scanInput.value.trim();
+        const p = App.findProductByBarcode(code);
+        if(!p) return App.toast("Código no encontrado");
+        setSelected(p);
+        App.toast("Seleccionado por código ✅");
+        focusScan();
+      }
+    });
+
+    document.getElementById("btnFocusScan").onclick = focusScan;
+
+    function toggleMode(){
+      const m = mode.value;
+      if(m === "DELTA"){
+        deltaBox.style.display = "";
+        setBox.style.display = "none";
+      }else{
+        deltaBox.style.display = "none";
+        setBox.style.display = "";
+      }
+    }
+    mode.addEventListener("change", toggleMode);
+
+    function applyAdjust(){
+      if(!selectedProductId) return App.toast("Seleccioná un producto");
+
+      const reason = reasonEl.value;
+      const note = noteEl.value.trim();
+      const msg = `${reason}. ${note}`.trim();
+
+      try{
+        if(mode.value === "DELTA"){
+          const d = Number(deltaEl.value);
+          const mv = App.recordStockDelta({
+            productId: selectedProductId,
+            delta: d,
+            note: msg,
+            refType: "ADJUST",
+            refId: ""
+          });
+          App.toast(`Ajuste aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)}) ✅`);
+        }else{
+          const ns = Number(newStockEl.value);
+          const mv = App.recordStockSet({
+            productId: selectedProductId,
+            newStock: ns,
+            note: msg,
+            refType: "INVENTORY",
+            refId: ""
+          });
+          App.toast(`Inventario aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)}) ✅`);
+        }
+
+        // refrescar seleccionado (stock cambió)
+        setSelected(App.findProductById(selectedProductId));
+      }catch(err){
+        App.toast(err.message || "Error");
+      }
+    }
+
+    document.getElementById("btnApply").onclick = applyAdjust;
+
+    document.addEventListener("keydown",(e)=>{
+      if(e.key === "F2"){ e.preventDefault(); focusScan(); }
+      if(e.key === "F9"){ e.preventDefault(); applyAdjust(); }
+    });
+
+    qName.addEventListener("input", updateResults);
+
+    toggleMode();
+    updateResults();
+    qName.focus();
+  </script>
+</body>
+</html>

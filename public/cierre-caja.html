@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Caja diaria</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top__inner">
+    <div class="brand">
+      <div class="brand__logo">A</div>
+      <div>
+        <div class="brand__name">Caja diaria</div>
+        <div class="brand__sub">Abrir / Cerrar • Totales por medio de pago</div>
+      </div>
+    </div>
+    <div class="row">
+      <a class="btn" href="./index.html">Volver</a>
+      <a class="btn btn--primary" href="./caja.html">Ir a Caja</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:900px">
+
+  <section class="section">
+    <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <h3 style="margin:0 0 6px">Estado</h3>
+        <div class="muted" id="lblState">—</div>
+      </div>
+      <div class="row" style="gap:10px">
+        <button class="btn btn--primary" id="btnOpen">Abrir caja</button>
+        <button class="btn btn--danger" id="btnClose">Cerrar caja</button>
+        <button class="btn" id="btnReset">Reset (solo prueba)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Apertura</h3>
+    <div class="row" style="gap:10px;align-items:end">
+      <div style="width:240px">
+        <label>Monto inicial</label>
+        <input id="openingAmount" type="number" step="0.01" min="0" value="0" />
+      </div>
+      <div class="muted" style="flex:1">
+        Se recomienda abrir caja todos los días para que los reportes de caja diaria sean claros.
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Totales</h3>
+
+    <div class="section" style="padding:10px">
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><span class="muted">Efectivo</span><div><strong id="tCash">$0</strong></div></div>
+        <div><span class="muted">Mercado Pago</span><div><strong id="tMP">$0</strong></div></div>
+        <div><span class="muted">Cuenta DNI</span><div><strong id="tDNI">$0</strong></div></div>
+        <div><span class="muted">Tarjetas</span><div><strong id="tCard">$0</strong></div></div>
+      </div>
+
+      <div class="row" style="justify-content:space-between;margin-top:10px">
+        <span class="muted">Ventas registradas</span>
+        <strong id="tSales">0</strong>
+      </div>
+    </div>
+
+    <div class="muted" style="margin-top:10px">
+      Nota: los totales se alimentan de las ventas que ya estás guardando en Caja.
+    </div>
+  </section>
+
+</main>
+
+<script src="./js/app.js"></script>
+<script>
+  App.guardPage(App.PERMS.seller_admin_owner);
+
+  // ✅ Si estás usando login/roles:
+  // App.guardPage(App.PERMS.cashier_or_admin);
+
+  // ====== FALLBACK caja en localStorage (si App.getCash no existe o está incompleto) ======
+  const CASH_KEY = "almacen_cash_v1";
+
+  function cashDefault(){
+    return {
+      open: false,
+      openedAt: null,
+      closedAt: null,
+      openingAmount: 0,
+      totals: { cash:0, mp:0, dni:0, card:0 },
+      salesIds: []
+    };
+  }
+
+  function getCashSafe(){
+    if (window.App?.getCash) return App.getCash();
+
+    const raw = localStorage.getItem(CASH_KEY);
+    if(!raw){
+      const d = cashDefault();
+      localStorage.setItem(CASH_KEY, JSON.stringify(d));
+      return d;
+    }
+    try { return JSON.parse(raw); }
+    catch {
+      const d = cashDefault();
+      localStorage.setItem(CASH_KEY, JSON.stringify(d));
+      return d;
+    }
+  }
+
+  function setCashSafe(cash){
+    if (window.App?.setCash) return App.setCash(cash);
+    localStorage.setItem(CASH_KEY, JSON.stringify(cash));
+  }
+
+  function money(n){
+    const v = Number(n || 0);
+    return v.toLocaleString("es-AR", { style:"currency", currency:"ARS", minimumFractionDigits:2 });
+  }
+
+  // ====== UI ======
+  const lblState = document.getElementById("lblState");
+  const openingAmount = document.getElementById("openingAmount");
+  const tCash = document.getElementById("tCash");
+  const tMP = document.getElementById("tMP");
+  const tDNI = document.getElementById("tDNI");
+  const tCard = document.getElementById("tCard");
+  const tSales = document.getElementById("tSales");
+
+  function render(){
+    const cash = getCashSafe();
+
+    lblState.textContent = cash.open
+      ? `ABIERTA • ${new Date(cash.openedAt).toLocaleString("es-AR")} • Inicial: ${money(cash.openingAmount)}`
+      : `CERRADA ${cash.closedAt ? "• " + new Date(cash.closedAt).toLocaleString("es-AR") : ""}`;
+
+    openingAmount.value = Number(cash.openingAmount || 0);
+
+    tCash.textContent = money(cash.totals?.cash || 0);
+    tMP.textContent   = money(cash.totals?.mp || 0);
+    tDNI.textContent  = money(cash.totals?.dni || 0);
+    tCard.textContent = money(cash.totals?.card || 0);
+    tSales.textContent = String((cash.salesIds || []).length);
+  }
+
+  function openCash(){
+    const cash = getCashSafe();
+    if(cash.open){
+      App?.toast?.("La caja ya está abierta");
+      return;
+    }
+
+    const initial = Number(openingAmount.value || 0);
+    if(initial < 0){
+      App?.toast?.("Monto inicial inválido");
+      return;
+    }
+
+    const next = cashDefault();
+    next.open = true;
+    next.openedAt = new Date().toISOString();
+    next.openingAmount = initial;
+
+    // mantiene ventas/totales en 0 al abrir una nueva caja diaria
+    setCashSafe(next);
+    App?.toast?.("Caja abierta ✅");
+    render();
+  }
+
+  function closeCash(){
+    const cash = getCashSafe();
+    if(!cash.open){
+      App?.toast?.("La caja ya está cerrada");
+      return;
+    }
+    cash.open = false;
+    cash.closedAt = new Date().toISOString();
+    setCashSafe(cash);
+    App?.toast?.("Caja cerrada ✅");
+    render();
+  }
+
+  function resetCash(){
+    setCashSafe(cashDefault());
+    App?.toast?.("Caja reseteada (prueba) ✅");
+    render();
+  }
+
+  document.getElementById("btnOpen").addEventListener("click", openCash);
+  document.getElementById("btnClose").addEventListener("click", closeCash);
+  document.getElementById("btnReset").addEventListener("click", resetCash);
+
+  render();
+</script>
+
+</body>
+</html>

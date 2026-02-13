@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Activar licencia</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top__inner">
+    <div class="brand">
+      <div class="brand__logo">A</div>
+      <div>
+        <div class="brand__name">Activación</div>
+        <div class="brand__sub">Pasar de DEMO a FULL</div>
+      </div>
+    </div>
+    <div class="row">
+      <a class="btn" href="./index.html">Volver</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:720px">
+  <section class="section">
+    <h3 style="margin:0 0 10px">Estado</h3>
+    <div class="section" style="padding:12px">
+      <div id="state" class="muted">—</div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Ingresar código</h3>
+    <label>Código de activación</label>
+    <textarea id="token" rows="4" placeholder="Pegá el código acá..."></textarea>
+    <div class="row" style="margin-top:10px;gap:10px">
+      <button class="btn btn--primary" id="btnActivate">Activar</button>
+      <button class="btn btn--danger" id="btnClear">Borrar licencia</button>
+    </div>
+  </section>
+</main>
+
+<script src="./js/app.js"></script>
+<script>
+  const state = document.getElementById("state");
+  const token = document.getElementById("token");
+
+  function render(){
+    const lic = App.getLicense();
+    state.innerHTML = App.isLicensed()
+      ? `✅ FULL activada<br><strong>${lic.customer}</strong> • ${lic.date} • Activada: ${new Date(lic.activatedAt).toLocaleString("es-AR")}`
+      : "🟡 MODO DEMO (sin licencia)";
+  }
+
+  document.getElementById("btnActivate").onclick = () => {
+    const r = App.activateLicense(token.value);
+    if(!r.ok) return App.toast(r.message || "No se pudo activar");
+    App.toast("Licencia activada ✅");
+    render();
+  };
+
+  document.getElementById("btnClear").onclick = () => {
+    localStorage.removeItem("almacen_license_v1");
+    App.toast("Licencia borrada");
+    render();
+  };
+
+  render();
+</script>
+</body>
+</html>

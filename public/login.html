@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ingresar</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top__inner">
+    <div class="brand">
+      <div class="brand__logo">A</div>
+      <div>
+        <div class="brand__name">Ingresar</div>
+        <div class="brand__sub">PIN + rol</div>
+      </div>
+    </div>
+    <div class="row">
+      <a class="btn" href="./index.html">Inicio</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:520px">
+  <section class="section">
+    <h3>PIN</h3>
+    <div class="muted" style="margin-bottom:10px">
+      Admin y Cajero tienen permisos distintos.
+    </div>
+
+    <label>Ingresá tu PIN</label>
+    <input id="pin" type="password" inputmode="numeric" placeholder="****" />
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn btn--primary" id="btnLogin" style="flex:1">Entrar</button>
+      <button class="btn" id="btnLogout">Salir</button>
+    </div>
+
+    <div class="section" style="padding:10px;margin-top:12px">
+      <div class="muted" id="state">—</div>
+      <div class="muted" style="margin-top:6px">
+        Defaults (cambiables en app.js): Admin <strong>1234</strong> • Cajero <strong>0000</strong>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="./js/app.js"></script>
+<script>
+  App.ensureAuthSeed();
+
+  const pin = document.getElementById("pin");
+  const state = document.getElementById("state");
+
+  const params = new URLSearchParams(location.search);
+  const next = params.get("next") || "index.html";
+
+  // ✅ Prospect ID para tracking: login.html?pid=almacen-los-pinos
+  const pid = params.get("pid");
+  if (pid) localStorage.setItem("demo_prospect_id", pid);
+
+  function render(){
+    const me = App.getMe();
+    state.innerHTML = me
+      ? `Sesión activa: <strong>${me.name}</strong> • Rol: <strong>${me.role}</strong>`
+      : "Sin sesión activa.";
+  }
+
+  async function trackLogin(){
+    const me = App.getMe();
+    const prospectId = localStorage.getItem("demo_prospect_id") || "public-demo";
+    try{
+      await fetch("/api/track/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospectId,
+          role: me?.role || "unknown",
+          name: me?.name || "unknown"
+        })
+      });
+    }catch(e){
+      // silencioso (no queremos romper el login si falla el tracking)
+    }
+  }
+
+  document.getElementById("btnLogin").onclick = async () => {
+    const r = App.loginWithPin(pin.value);
+    if(!r.ok) return App.toast(r.message);
+
+    // ✅ track del login
+    await trackLogin();
+
+    App.toast("Ingresado ✅");
+    location.replace("./" + next);
+  };
+
+  document.getElementById("btnLogout").onclick = () => {
+    App.logout();
+    App.toast("Sesión cerrada");
+    render();
+  };
+
+  pin.addEventListener("keydown",(e)=>{
+    if(e.key === "Enter") document.getElementById("btnLogin").click();
+  });
+
+  render();
+  pin.focus();
+</script>
+</html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bajo stock</title>
+  <link rel="stylesheet" href="./css/styles.css">
+<script src="./js/app.js"></script>
+
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Bajo stock</div>
+          <div class="brand__sub">Stock ≤ mínimo</div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./entradas.html">Ir a Entradas</a>
+        <a class="btn" href="./productos.html">Productos</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="section">
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div style="flex:1;min-width:260px">
+          <h3 style="margin:0 0 8px">Lista de reposición</h3>
+          <div class="muted">Se muestran productos donde <strong>stock ≤ mínimo</strong>.</div>
+        </div>
+        <div style="width:320px">
+          <label>Buscar</label>
+          <input id="q" placeholder="Buscar por nombre o categoría..." />
+        </div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <div class="muted" id="summary">—</div>
+          <button class="btn" id="btnRefresh">Actualizar</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto;margin-top:12px">
+        <table class="table" id="tbl">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Stock</th>
+              <th>Mínimo</th>
+              <th>Estado</th>
+              <th style="width:160px"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="muted" style="margin-top:10px">
+        Tip: El estado “CRÍTICO” aparece cuando el stock está en <strong>0</strong>.
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+  <script>
+    App.guardPage(App.PERMS.admin_or_owner);
+
+    window.App.ensureSeed();
+
+    const q = document.getElementById("q");
+    const tbody = document.querySelector("#tbl tbody");
+    const summary = document.getElementById("summary");
+
+    function badge(text, kind){
+      const styles = {
+        critical: "border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.08); color: var(--danger);",
+        low: "border-color: rgba(14,165,233,.35); background: rgba(14,165,233,.10); color: var(--accent2);"
+      };
+      return `<span class="btn" style="padding:6px 10px; cursor:default; ${styles[kind]||""}">${text}</span>`;
+    }
+
+    function render(){
+      const text = q.value.trim().toLowerCase();
+      const all = App.getProducts().filter(p => p.active !== false);
+
+      const low = all
+        .filter(p => App.num(p.stock) <= App.num(p.minStock || 0))
+        .filter(p => !text || (p.name||"").toLowerCase().includes(text) || (p.category||"").toLowerCase().includes(text))
+        .sort((a,b) => App.num(a.stock) - App.num(b.stock)); // primero los más críticos
+
+      const criticalCount = low.filter(p => App.num(p.stock) <= 0).length;
+      summary.textContent = `En bajo stock: ${low.length} • Críticos (stock 0): ${criticalCount}`;
+
+      tbody.innerHTML = "";
+      low.forEach(p => {
+        const isCritical = App.num(p.stock) <= 0;
+        const state = isCritical ? badge("CRÍTICO", "critical") : badge("Bajo stock", "low");
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${p.name}</strong></td>
+          <td>${p.category || "-"}</td>
+          <td>${App.roundQty(p.stock)}</td>
+          <td>${App.roundQty(p.minStock || 0)}</td>
+          <td>${state}</td>
+          <td>
+            <a class="btn btn--primary" href="./entradas.html">Reponer</a>
+            <a class="btn" href="./productos.html">Editar</a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if(!low.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td colspan="6" class="muted" style="padding:14px 8px">
+            No hay productos en bajo stock ✅
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById("btnRefresh").onclick = render;
+    q.addEventListener("input", render);
+
+    render();
+    q.focus();
+  </script>
+</body>
+</html>

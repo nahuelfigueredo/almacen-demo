@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Movimientos (Kardex)</title>
+  <link rel="stylesheet" href="./css/styles.css">
+<script src="./js/app.js"></script>
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Movimientos (Kardex)</div>
+          <div class="brand__sub">Entradas / Salidas / Ajustes</div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./entradas.html">Entradas</a>
+        <a class="btn" href="./caja.html">Caja</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="section">
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <h3 style="margin:0 0 8px">Historial</h3>
+          <div class="muted">Todo cambio de stock queda registrado.</div>
+        </div>
+        <div class="row">
+          <div style="width:220px">
+            <label>Tipo</label>
+            <select id="type">
+              <option value="">Todos</option>
+              <option value="IN">IN (Entrada)</option>
+              <option value="OUT">OUT (Salida)</option>
+              <option value="ADJ">ADJ (Ajuste)</option>
+            </select>
+          </div>
+          <div style="width:320px">
+            <label>Buscar producto</label>
+            <input id="q" placeholder="Nombre o ID..." />
+          </div>
+          <button class="btn" id="btnRefresh" style="align-self:end">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="muted" id="summary">—</div>
+      </div>
+
+      <div style="overflow:auto;margin-top:12px">
+        <table class="table" id="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>Antes</th>
+              <th>Después</th>
+              <th>Referencia</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="./js/app.js"></script>
+
+  <script>
+    App.guardPage(App.PERMS.admin_or_owner);
+
+
+    window.App.ensureSeed();
+
+    const typeEl = document.getElementById("type");
+    const qEl = document.getElementById("q");
+    const summary = document.getElementById("summary");
+    const tbody = document.querySelector("#tbl tbody");
+
+    function render(){
+      const type = typeEl.value;
+      const q = qEl.value.trim().toLowerCase();
+
+      let list = App.getStockMoves();
+
+      if(type) list = list.filter(m => m.type === type);
+
+      if(q){
+        list = list.filter(m =>
+          (m.productName||"").toLowerCase().includes(q) ||
+          String(m.productId||"").toLowerCase().includes(q)
+        );
+      }
+
+      const inCount = list.filter(m => m.type === "IN").length;
+      const outCount = list.filter(m => m.type === "OUT").length;
+
+      summary.textContent = `Movimientos: ${list.length} • IN: ${inCount} • OUT: ${outCount}`;
+
+      tbody.innerHTML = "";
+      list.slice(0, 300).forEach(m => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><small>${new Date(m.createdAt).toLocaleString("es-AR")}</small></td>
+          <td><strong>${m.type}</strong></td>
+          <td>
+            <strong>${m.productName}</strong><br/>
+            <small class="muted">${m.productId}</small>
+          </td>
+          <td>${
+         m.type === "ADJ" && typeof m.delta === "number"
+        ? (m.delta > 0 ? "+" : "") + App.roundQty(m.delta)
+        : App.roundQty(m.qty)
+          }</td>
+
+          <td>${App.roundQty(m.stockBefore)}</td>
+          <td><strong>${App.roundQty(m.stockAfter)}</strong></td>
+          <td><small>${m.refType || "-"} ${m.refId || ""}</small></td>
+          <td><small>${m.note || "-"}</small></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if(!list.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="8" class="muted" style="padding:14px 8px">Sin movimientos todavía.</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById("btnRefresh").onclick = render;
+    typeEl.addEventListener("change", render);
+    qEl.addEventListener("input", render);
+
+    render();
+  </script>
+</body>
+</html>

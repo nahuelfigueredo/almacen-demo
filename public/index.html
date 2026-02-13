@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Almacén | Sistema</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="./js/app.js"></script>
+
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Sistema de Almacén</div>
+          <div class="brand__sub">Caja + Stock + Precios</div>
+        </div>
+      </div>
+      <div class="pill">Modo: Mostrador (PC)</div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <a class="card" href="./caja.html">
+      <h2>Caja (POS)</h2>
+      <p>Venta rápida, lector USB, cobro y ticket.</p>
+    </a>
+
+    <a class="card" href="./productos.html">
+      <h2>Productos</h2>
+      <p>Alta/edición, precios, stock y mínimos.</p>
+    </a>
+
+    <a class="card" href="./cierre-caja.html">
+      <h2>Caja diaria</h2>
+      <p>Apertura / Cierre y totales por medio de pago.</p>
+    </a>
+
+<a class="card" href="./entradas.html">
+  <h2>Entradas de mercadería</h2>
+  <p>Reposición/compra. Suma stock y guarda historial.</p>
+</a>
+
+<a class="card" href="./precios.html">
+  <h2>Aumentos de precios</h2>
+  <p>Subir precios por % (todos o por categoría) + redondeo.</p>
+</a>
+
+<a class="card" href="./bajo-stock.html">
+  <h2>Bajo stock</h2>
+  <p>Productos por reponer (stock ≤ mínimo) + críticos.</p>
+</a>
+
+
+<a class="card" href="./movimientos.html">
+  <h2>Movimientos (Kardex)</h2>
+  <p>Historial completo de entradas y salidas de stock.</p>
+</a>
+
+
+<a class="card" href="./ajustes.html">
+  <h2>Ajustes de stock</h2>
+  <p>Rotura, vencido e inventario físico (ADJ en Kardex).</p>
+</a>
+
+<a class="card" href="./reportes.html">
+  <h2>Reportes</h2>
+  <p>Ventas por día/mes + pagos + exportar a Excel (CSV).</p>
+</a>
+
+<a class="card" href="./usuarios.html">
+  <h2>Usuarios</h2>
+  <p>PIN Dueño/Admin/Vendedor (solo Dueño).</p>
+</a>
+
+
+<a class="btn btn--primary" href="./demo.html">Modo DEMO</a>
+
+
+
+  </main>
+
+
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <small>MCN Digital Studio • Base offline con localStorage (lista para migrar a nube)</small>
+    </div>
+  </footer>
+
+  <script src="./js/app.js"></script>
+
+  <script>
+    // Inicializa datos demo una sola vez
+    window.App.ensureSeed();
+  </script>
+</body>
+</html>

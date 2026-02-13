@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Entradas de mercadería</title>
+  <link rel="stylesheet" href="./css/styles.css">
+<script src="./js/app.js"></script>
+
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo">A</div>
+        <div>
+          <div class="brand__name">Entradas de mercadería</div>
+          <div class="brand__sub">Sumar stock + guardar historial</div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./productos.html">Productos</a>
+        <button class="btn btn--primary" id="btnFocusScan">Escanear <span class="kbd">F2</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap split">
+    <!-- LEFT -->
+    <section class="section">
+      <h3>Nueva entrada</h3>
+
+      <div class="row" style="margin-bottom:10px;">
+        <div style="flex:1;min-width:260px">
+          <label>Buscar producto por nombre</label>
+          <input id="qName" placeholder="Ej: azúcar, coca, queso..." autocomplete="off" />
+          <div class="muted" style="margin-top:6px">
+            Tip: apretá <span class="kbd">F2</span>, escaneá y Enter selecciona el producto.
+          </div>
+        </div>
+        <div style="width:180px">
+          <label>Cantidad (decimal)</label>
+          <input id="qty" type="number" step="0.001" min="0.001" value="1" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px;">
+        <div style="flex:1">
+          <label>Costo unitario (opcional)</label>
+          <input id="unitCost" type="number" step="0.01" min="0" value="0" />
+          <div class="muted" style="margin-top:6px">Si lo cargás, se actualiza el costo del producto.</div>
+        </div>
+        <div style="flex:1">
+          <label>Proveedor (opcional)</label>
+          <input id="supplier" placeholder="Ej: Distribuidora X" />
+        </div>
+      </div>
+
+      <label>Nota (opcional)</label>
+      <textarea id="note" rows="2" placeholder="Ej: compra mayorista, promo..." style="resize:vertical"></textarea>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn--primary" id="btnAdd" style="flex:1">Registrar entrada <span class="kbd">F9</span></button>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <strong>Producto seleccionado</strong>
+          <small class="muted">Click en resultados</small>
+        </div>
+        <div id="selected" class="muted" style="margin-top:8px">—</div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <strong>Resultados</strong>
+          <small class="muted">Máx 10</small>
+        </div>
+        <div id="results" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Hidden scanner input -->
+      <input id="scanInput" style="position:fixed;left:-9999px;opacity:0" autocomplete="off" />
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="section">
+      <h3>Historial (últimas entradas)</h3>
+      <div class="muted" style="margin-bottom:10px">
+        Se guarda para control interno y reportes.
+      </div>
+      <div style="overflow:auto">
+        <table class="table" id="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>Costo</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./js/app.js"></script>
+
+  <script>
+   App.guardPage(App.PERMS.admin_or_owner);
+
+    window.App.ensureSeed();
+
+    const qName = document.getElementById("qName");
+    const qtyEl = document.getElementById("qty");
+    const unitCostEl = document.getElementById("unitCost");
+    const supplierEl = document.getElementById("supplier");
+    const noteEl = document.getElementById("note");
+
+    const results = document.getElementById("results");
+    const selected = document.getElementById("selected");
+    const scanInput = document.getElementById("scanInput");
+
+    const tbody = document.querySelector("#tbl tbody");
+
+    let selectedProductId = null;
+
+    function setSelected(p){
+      selectedProductId = p?.id || null;
+      if(!p){
+        selected.textContent = "—";
+        return;
+      }
+      selected.innerHTML = `
+        <strong>${p.name}</strong><br/>
+        <small>Cat: ${p.category || "-"} • Stock actual: ${App.roundQty(p.stock)} • Mín: ${App.roundQty(p.minStock||0)}</small><br/>
+        <small>Código: ${p.barcode || "-"}</small>
+      `;
+    }
+
+    function renderResults(list){
+      results.innerHTML = "";
+      const box = document.createElement("div");
+      box.style.display = "grid";
+      box.style.gridTemplateColumns = "1fr";
+      box.style.gap = "8px";
+
+      list.slice(0, 10).forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.style.textAlign = "left";
+        btn.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <div>
+              <strong>${p.name}</strong>
+              <div><small>${p.category || "Sin categoría"} • Stock: ${App.roundQty(p.stock)}</small></div>
+            </div>
+            <div style="white-space:nowrap"><small>${p.barcode || ""}</small></div>
+          </div>
+        `;
+        btn.onclick = () => {
+          setSelected(p);
+          App.toast("Producto seleccionado");
+        };
+        box.appendChild(btn);
+      });
+
+      if(!list.length){
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.textContent = "Sin resultados.";
+        box.appendChild(empty);
+      }
+      results.appendChild(box);
+
+      // Autoselecciona el primero para agilidad
+      setSelected(list[0] || null);
+    }
+
+    function updateResults(){
+      const list = App.searchProductsByName(qName.value);
+      renderResults(list);
+    }
+
+    function renderHistory(){
+      const list = App.getStockEntries().slice(0, 25);
+      tbody.innerHTML = "";
+      list.forEach(e => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><small>${new Date(e.createdAt).toLocaleString("es-AR")}</small></td>
+          <td><strong>${e.productName}</strong><br/><small class="muted">${e.supplier || "-"}</small></td>
+          <td>${App.roundQty(e.qty)}</td>
+          <td>${e.unitCost > 0 ? App.money(e.unitCost) : "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function focusScan(){
+      scanInput.value = "";
+      scanInput.focus();
+      App.toast("Listo para escanear (Enter selecciona)");
+    }
+
+    scanInput.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        const code = scanInput.value.trim();
+        const p = App.findProductByBarcode(code);
+        if(!p) return App.toast("Código no encontrado");
+        setSelected(p);
+        App.toast("Producto seleccionado por código ✅");
+        focusScan();
+      }
+    });
+
+    document.getElementById("btnFocusScan").onclick = focusScan;
+
+    function register(){
+      if(!selectedProductId) return App.toast("Seleccioná un producto");
+      try{
+        const entry = App.registerStockEntry({
+          productId: selectedProductId,
+          qty: qtyEl.value,
+          unitCost: unitCostEl.value,
+          supplier: supplierEl.value,
+          note: noteEl.value
+        });
+        App.toast(`Entrada registrada: +${App.roundQty(entry.qty)}`);
+        // refresca seleccionado con stock actualizado
+        const p = App.findProductById(selectedProductId);
+        setSelected(p);
+        renderHistory();
+        // reset campos suaves
+        qtyEl.value = 1;
+        unitCostEl.value = 0;
+        noteEl.value = "";
+        qName.focus();
+        qName.select();
+      }catch(err){
+        App.toast(err.message || "Error");
+      }
+    }
+
+    document.getElementById("btnAdd").onclick = register;
+
+    document.addEventListener("keydown",(e)=>{
+      if(e.key === "F2"){ e.preventDefault(); focusScan(); }
+      if(e.key === "F9"){ e.preventDefault(); register(); }
+    });
+
+    qName.addEventListener("input", updateResults);
+
+    updateResults();
+    renderHistory();
+    qName.focus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Demo • Almacén</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top__inner">
+    <div class="brand">
+      <div class="brand__logo">A</div>
+      <div>
+        <div class="brand__name">Modo DEMO</div>
+        <div class="brand__sub">Cargar datos • Ventas demo • Reset</div>
+      </div>
+    </div>
+    <div class="row">
+      <a class="btn" href="./index.html">Volver</a>
+      <a class="btn btn--primary" href="./caja.html">Ir a Caja</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:980px">
+
+  <section class="section">
+    <h3 style="margin:0 0 10px">Credenciales DEMO</h3>
+    <div class="section" style="padding:12px">
+      <div class="row" style="gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div class="muted">Dueño (todo + Usuarios)</div>
+          <div style="font-size:22px"><strong>9999</strong></div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div class="muted">Admin (gestión)</div>
+          <div style="font-size:22px"><strong>1234</strong></div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div class="muted">Vendedor (Caja)</div>
+          <div style="font-size:22px"><strong>0000</strong></div>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px">
+        Tip: en el cliente se cambian desde <strong>Usuarios & PIN</strong> (solo Dueño).
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Acciones DEMO</h3>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <button class="btn btn--primary" id="btnLoadDemo">Cargar DEMO</button>
+      <button class="btn" id="btnMakeSales">Generar 2 ventas demo</button>
+      <button class="btn btn--danger" id="btnResetAll">Borrar TODO (reset)</button>
+    </div>
+    <div class="muted" style="margin-top:10px">
+      “Cargar DEMO” crea productos si no existen y abre la caja diaria con $10.000 inicial.
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Navegación rápida</h3>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <a class="btn" href="./productos.html">Productos</a>
+      <a class="btn" href="./entradas.html">Entradas</a>
+      <a class="btn" href="./precios.html">Aumentos</a>
+      <a class="btn" href="./movimientos.html">Kardex</a>
+      <a class="btn" href="./bajo-stock.html">Bajo stock</a>
+      <a class="btn" href="./reportes.html">Reportes</a>
+      <a class="btn" href="./cierre-caja.html">Caja diaria</a>
+      <a class="btn btn--primary" href="./caja.html">POS Caja</a>
+      <a class="btn" href="./usuarios.html">Usuarios & PIN</a>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Estado actual</h3>
+    <div class="section" style="padding:12px">
+      <div class="row" style="gap:14px;flex-wrap:wrap">
+        <div style="min-width:220px">
+          <div class="muted">Productos</div>
+          <div style="font-size:18px"><strong id="kProducts">0</strong></div>
+        </div>
+        <div style="min-width:220px">
+          <div class="muted">Ventas</div>
+          <div style="font-size:18px"><strong id="kSales">0</strong></div>
+        </div>
+        <div style="min-width:280px">
+          <div class="muted">Caja diaria</div>
+          <div style="font-size:18px"><strong id="kCash">—</strong></div>
+        </div>
+      </div>
+      <div class="muted" id="kMe" style="margin-top:8px">—</div>
+    </div>
+  </section>
+
+</main>
+
+<script src="./js/app.js"></script>
+<script>
+(() => {
+  // Si querés que sea solo Dueño, descomentá:
+  // App.guardPage(App.PERMS.owner_only);
+
+  const kProducts = document.getElementById("kProducts");
+  const kSales = document.getElementById("kSales");
+  const kCash = document.getElementById("kCash");
+  const kMe = document.getElementById("kMe");
+
+  function refreshKPIs(){
+    const prods = App.getProducts().length;
+    const sales = App.getSales().length;
+    const cash = App.getCash();
+    const me = App.getMe();
+
+    kProducts.textContent = String(prods);
+    kSales.textContent = String(sales);
+    kCash.textContent = cash.open
+      ? `ABIERTA • Inicial ${App.money(cash.openingAmount)} • Totales: ${App.money(cash.totals.cash + cash.totals.mp + cash.totals.dni + cash.totals.card)}`
+      : "CERRADA";
+
+    kMe.textContent = me
+      ? `Sesión: ${me.name} (${me.role})`
+      : "Sin sesión (podés usar login.html)";
+  }
+
+  function loadDemo(){
+    // 1) usuarios default (si faltan)
+    App.ensureAuthSeed();
+
+    // 2) productos demo (si faltan)
+    App.ensureSeed();
+
+    // 3) abrir caja si está cerrada
+    try{
+      const cash = App.getCash();
+      if(!cash.open) App.openCash(10000);
+    }catch(e){}
+
+    App.toast("DEMO cargado ✅ (Productos + Caja abierta)");
+    refreshKPIs();
+  }
+
+  function pickDemoProduct(){
+    const list = App.getProducts();
+    return list[Math.floor(Math.random() * Math.max(1, list.length))] || null;
+  }
+
+  function makeSale({ items, payments, note }){
+    // valida caja abierta
+    const cash = App.getCash();
+    if(!cash.open) throw new Error("Caja cerrada (abrila desde DEMO o Caja diaria)");
+
+    const subtotal = items.reduce((a,it)=> a + (App.num(it.qty) * App.num(it.unitPrice)), 0);
+    const discount = 0;
+    const total = Math.max(0, subtotal - discount);
+
+    const sale = {
+      id: App.uid("sale"),
+      createdAt: new Date().toISOString(),
+      items: items.map(it => ({
+        productId: it.productId,
+        name: it.name,
+        qty: App.roundQty(it.qty),
+        unitPrice: App.num(it.unitPrice),
+        subtotal: App.num(it.qty)*App.num(it.unitPrice)
+      })),
+      subtotal,
+      discount,
+      total,
+      payments: {
+        cash: App.num(payments.cash),
+        mp: App.num(payments.mp),
+        dni: App.num(payments.dni),
+        card: App.num(payments.card),
+      },
+      note: note || "Venta demo"
+    };
+
+    // stock OUT por item
+    sale.items.forEach(it => {
+      App.recordStockMove({
+        type: "OUT",
+        productId: it.productId,
+        qty: it.qty,
+        note: "Venta demo",
+        refType: "SALE",
+        refId: sale.id
+      });
+    });
+
+    // guarda venta
+    App.addSale(sale);
+
+    // suma a caja
+    cash.totals.cash += sale.payments.cash;
+    cash.totals.mp   += sale.payments.mp;
+    cash.totals.dni  += sale.payments.dni;
+    cash.totals.card += sale.payments.card;
+    cash.salesIds.push(sale.id);
+    App.setCash(cash);
+
+    return sale;
+  }
+
+  function generate2SalesDemo(){
+    if(App.getProducts().length === 0){
+      loadDemo();
+    }
+
+    const p1 = pickDemoProduct();
+    const p2 = pickDemoProduct();
+    if(!p1 || !p2) return App.toast("No hay productos para demo");
+
+    // Venta 1 (mixta)
+    makeSale({
+      items: [
+        { productId: p1.id, name: p1.name, qty: 1, unitPrice: p1.price }
+      ],
+      payments: { cash: p1.price, mp: 0, dni: 0, card: 0 },
+      note: "Demo • venta 1"
+    });
+
+    // Venta 2 (kg/decimal si existe)
+    const qty2 = (p2.name.toLowerCase().includes("(kg)") || p2.name.toLowerCase().includes("queso")) ? 0.750 : 2;
+    const total2 = App.num(p2.price) * App.num(qty2);
+
+    makeSale({
+      items: [
+        { productId: p2.id, name: p2.name, qty: qty2, unitPrice: p2.price }
+      ],
+      payments: { cash: 0, mp: total2, dni: 0, card: 0 },
+      note: "Demo • venta 2"
+    });
+
+    App.toast("2 ventas demo generadas ✅");
+    refreshKPIs();
+  }
+
+  function resetAll(){
+    const ok = confirm("¿Borrar TODO? (productos, ventas, caja, movimientos, usuarios)");
+    if(!ok) return;
+
+    const keys = [
+      "almacen_products_v1",
+      "almacen_sales_v1",
+      "almacen_cash_v1",
+      "almacen_stock_entries_v1",
+      "almacen_price_changes_v1",
+      "almacen_stock_moves_v1",
+      "almacen_users_v1",
+      "almacen_session_v1",
+    ];
+
+    keys.forEach(k => localStorage.removeItem(k));
+    App.toast("Reset completo ✅");
+    setTimeout(()=>location.reload(), 300);
+  }
+
+  document.getElementById("btnLoadDemo").addEventListener("click", loadDemo);
+  document.getElementById("btnMakeSales").addEventListener("click", generate2SalesDemo);
+  document.getElementById("btnResetAll").addEventListener("click", resetAll);
+
+  refreshKPIs();
+})();
+</script>
+
+</body>
+</html>
