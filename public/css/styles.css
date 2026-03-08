@@ -3,112 +3,187 @@
   --card:#ffffff;
   --text:#0f172a;
   --muted:#475569;
-  --line:#e5e7eb;
+  --line:rgba(15, 23, 42, .10);
   --accent:#0ea5e9;
   --accent2:#0284c7;
   --danger:#dc2626;
   --ok:#16a34a;
-  --shadow: 0 10px 30px rgba(2, 8, 23, .08);
+
+  --shadow: 0 12px 34px rgba(2, 8, 23, .10);
+  --shadow-soft: 0 8px 22px rgba(2, 8, 23, .08);
+  --radius:16px;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
+
 body{
   margin:0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  background:var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color:var(--text);
+
+  /* Fondo más “pro” */
+  background:
+    radial-gradient(1100px 600px at 10% 0%, rgba(14,165,233,.14), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(2,132,199,.10), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, var(--bg) 36%, var(--bg) 100%);
 }
 
 .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
+/* Header */
 .top{
-  background:linear-gradient(180deg,#fff,rgba(255,255,255,.6));
+  background: rgba(255,255,255,.70);
   border-bottom:1px solid var(--line);
   position:sticky;top:0;z-index:5;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
 }
 .top__inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
 .brand{display:flex;align-items:center;gap:12px}
 .brand__logo{
-  width:42px;height:42px;border-radius:12px;
+  width:44px;height:44px;border-radius:14px;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
   color:#fff;display:flex;align-items:center;justify-content:center;
-  font-weight:800;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
-.brand__name{font-weight:800}
+.brand__logo svg{display:block}
+.brand__name{font-weight:800;letter-spacing:-.02em}
 .brand__sub{color:var(--muted);font-size:13px}
 
+/* Estado */
 .pill{
-  padding:8px 10px;border:1px solid var(--line);
-  background:#fff;border-radius:999px;color:var(--muted);font-size:13px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.78);
+  border-radius:999px;
+  color:var(--muted);
+  font-size:13px;
+  box-shadow: 0 6px 18px rgba(2,8,23,.06);
 }
+.pill__dot{
+  width:8px;height:8px;border-radius:50%;
+  background: radial-gradient(circle at 30% 30%, #7dd3fc, var(--accent));
+  box-shadow: 0 0 0 3px rgba(14,165,233,.14);
+}
+.pill__text{white-space:nowrap}
 
+/* Grid */
 .grid{
   display:grid;
   grid-template-columns: repeat(3, minmax(0,1fr));
   gap:14px;
   padding-top:22px;
 }
+
+/* Cards */
 .card{
   display:block;
-  background:var(--card);
+  background: rgba(255,255,255,.86);
   border:1px solid var(--line);
-  border-radius:16px;
+  border-radius:var(--radius);
   padding:16px;
   text-decoration:none;
   color:inherit;
-  box-shadow: var(--shadow);
-  transition: transform .08s ease, box-shadow .08s ease;
+  box-shadow: var(--shadow-soft);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  position:relative;
+  overflow:hidden;
 }
-.card:hover{transform: translateY(-2px)}
-.card h2{margin:0 0 6px;font-size:18px}
-.card p{margin:0;color:var(--muted)}
+.card::before{
+  content:"";
+  position:absolute;
+  inset:-2px -2px auto -2px;
+  height:2px;
+  background: linear-gradient(90deg, transparent, rgba(14,165,233,.55), transparent);
+  opacity:0;
+  transition: opacity .12s ease;
+}
+.card:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: rgba(14,165,233,.28);
+}
+.card:hover::before{opacity:1}
+.card:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 3px rgba(14,165,233,.18), var(--shadow);
+  border-color: rgba(14,165,233,.40);
+}
 
+.card__icon{
+  width:40px;height:40px;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background: linear-gradient(135deg, rgba(14,165,233,.14), rgba(2,132,199,.10));
+  border: 1px solid rgba(14,165,233,.16);
+  margin-bottom:10px;
+  font-size:18px;
+}
+
+.card h2{margin:0 0 6px;font-size:18px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);line-height:1.4}
+
+/* Sections/forms */
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .section{
-  background:var(--card);
+  background: rgba(255,255,255,.86);
   border:1px solid var(--line);
-  border-radius:16px;
-  box-shadow: var(--shadow);
+  border-radius:var(--radius);
+  box-shadow: var(--shadow-soft);
   padding:14px;
 }
 .section h3{margin:0 0 10px;font-size:16px}
 .muted{color:var(--muted);font-size:13px}
 
 label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-input,select,button,textarea{
-  font: inherit;
-}
+
+input,select,button,textarea{font: inherit}
+
 input,select,textarea{
   width:100%;
   padding:10px 10px;
   border:1px solid var(--line);
   border-radius:12px;
-  background:#fff;
+  background: rgba(255,255,255,.92);
   outline:none;
 }
-input:focus,select:focus,textarea:focus{border-color: rgba(14,165,233,.6); box-shadow: 0 0 0 3px rgba(14,165,233,.15);}
+input:focus,select:focus,textarea:focus{
+  border-color: rgba(14,165,233,.6);
+  box-shadow: 0 0 0 3px rgba(14,165,233,.15);
+}
 
+/* Buttons */
 .btn{
   border:1px solid var(--line);
-  background:#fff;
+  background: rgba(255,255,255,.9);
   padding:10px 12px;
   border-radius:12px;
   cursor:pointer;
+  transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn:hover{
+  box-shadow: 0 10px 24px rgba(2,8,23,.10);
+  border-color: rgba(15,23,42,.16);
 }
 .btn--primary{
   border-color: rgba(14,165,233,.35);
-  background: linear-gradient(135deg, rgba(14,165,233,.14), rgba(2,132,199,.10));
+  background: linear-gradient(135deg, rgba(14,165,233,.18), rgba(2,132,199,.12));
 }
 .btn--danger{border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.06); color:var(--danger)}
 .btn--ok{border-color: rgba(22,163,74,.35); background: rgba(22,163,74,.08); color:var(--ok)}
 .btn:active{transform: translateY(1px)}
 
-.table{
-  width:100%;
-  border-collapse: collapse;
-}
+/* Table */
+.table{width:100%;border-collapse: collapse}
 .table th,.table td{
   border-bottom:1px solid var(--line);
   padding:10px 8px;
@@ -118,28 +193,38 @@ input:focus,select:focus,textarea:focus{border-color: rgba(14,165,233,.6); box-s
 .table th{font-size:12px;color:var(--muted);font-weight:700}
 .table td small{color:var(--muted)}
 
+/* KBD */
 .kbd{
   display:inline-block;
   border:1px solid var(--line);
-  background:#fff;
+  background: rgba(255,255,255,.92);
   padding:2px 6px;
   border-radius:8px;
   font-size:12px;
   color:var(--muted);
 }
 
+/* Layout helpers */
 .split{
   display:grid;
   grid-template-columns: 1.3fr .7fr;
   gap:14px;
 }
+
+/* Responsive: 3 -> 2 -> 1 */
 @media (max-width: 980px){
-  .grid{grid-template-columns:1fr}
+  .grid{grid-template-columns: repeat(2, minmax(0, 1fr))}
   .split{grid-template-columns:1fr}
 }
+@media (max-width: 640px){
+  .grid{grid-template-columns:1fr}
+}
 
+/* Footer */
 .foot{border-top:1px solid var(--line);margin-top:16px}
 .foot__inner{color:var(--muted)}
+
+/* Toast */
 .toast{
   position:fixed;right:16px;bottom:16px;
   background:#111827;color:#fff;
@@ -148,4 +233,458 @@ input:focus,select:focus,textarea:focus{border-color: rgba(14,165,233,.6); box-s
   max-width: 360px;
   font-size: 14px;
   display:none;
+}
+
+/* Helpers */
+.mt-10{margin-top:10px}
+.table-wrap{overflow:auto}
+
+/* Section head */
+.section__head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.section__title{margin:0;font-size:16px}
+
+/* Filters */
+.filters{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  margin-bottom:10px;
+}
+.filters__item{flex:1;min-width:260px}
+.filters__item--sm{flex:0 0 200px}
+
+/* Form grid */
+.form-grid{display:grid;gap:10px}
+.form-grid__row{display:flex;gap:10px;flex-wrap:wrap}
+.form-grid__item{flex:1;min-width:220px}
+
+/* Actions */
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+/* Table row states */
+.row--low td{
+  background: rgba(220,38,38,.05);
+}
+.cell-actions{white-space:nowrap}
+.cell-title{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* Badges */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  border:1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.7);
+  color: var(--muted);
+}
+.badge--warn{
+  border-color: rgba(220,38,38,.25);
+  background: rgba(220,38,38,.08);
+  color: #b91c1c;
+}
+
+/* ===== Productos: helpers y layout ===== */
+.mt-10{margin-top:10px}
+.table-wrap{overflow:auto}
+
+/* Head de sección */
+.section__head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.section__title{margin:0;font-size:16px}
+
+/* Filtros */
+.filters{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  margin-bottom:10px;
+}
+.filters__item{flex:1;min-width:260px}
+.filters__item--sm{flex:0 0 200px}
+
+/* Form */
+.form-grid{display:grid;gap:10px}
+.form-grid__row{display:flex;gap:10px;flex-wrap:wrap}
+.form-grid__item{flex:1;min-width:220px}
+
+/* Actions */
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+/* Table: estados */
+.row--low td{
+  background: rgba(220,38,38,.05);
+}
+.cell-actions{white-space:nowrap}
+.cell-title{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* Badges */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  border:1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.7);
+  color: var(--muted);
+}
+.badge--warn{
+  border-color: rgba(220,38,38,.25);
+  background: rgba(220,38,38,.08);
+  color: #b91c1c;
+}
+
+/* ===== POS/Caja ===== */
+.mt-8{margin-top:8px}
+
+.pos-add{
+  display:grid;
+  grid-template-columns: 1fr 160px auto;
+  gap:10px;
+  align-items:end;
+  margin-bottom:12px;
+}
+.pos-add__q{min-width:260px}
+.pos-add__qty{width:160px}
+.pos-add__btn{justify-self:start}
+
+.pos-box{padding:10px;margin-bottom:12px}
+.pos-box__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.pos-results{
+  display:grid;
+  gap:8px;
+}
+.pos-result{
+  width:100%;
+  text-align:left;
+  justify-content:flex-start;
+}
+.pos-result__name{
+  font-weight:700;
+  display:block;
+}
+.pos-result__meta{
+  display:block;
+  font-size:12px;
+  color: var(--muted);
+}
+
+.totals{
+  margin-top:12px;
+  display:grid;
+  gap:8px;
+  max-width: 320px;
+  margin-left:auto;
+}
+.totals__line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.totals__line--input input{
+  width:120px;
+}
+.totals__line--total strong{
+  font-size:18px;
+}
+
+.pay-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.pos-pay{
+  margin-top:10px;
+  width:100%;
+}
+
+.scan-input{
+  position:fixed;
+  left:-9999px;
+  top:0;
+  opacity:0;
+}
+
+@media (max-width: 980px){
+  .pos-add{
+    grid-template-columns: 1fr;
+    align-items:stretch;
+  }
+  .pos-add__qty{width:auto}
+  .totals{max-width:none}
+}
+
+
+/* ===== Caja (POS): layout tipo app en PC (sin tanto alto) ===== */
+@media (min-width: 980px){
+  /* que el layout use el alto de la pantalla */
+  body.pos-page{
+    height: 100vh;
+    overflow: hidden; /* scroll interno */
+  }
+
+  body.pos-page .top{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  /* el main ocupa el resto de la pantalla */
+  body.pos-page main.wrap.split{
+    height: calc(100vh - 84px); /* 84px aprox header; si tu header cambia, ajustamos */
+    overflow: hidden;
+  }
+
+  /* cada columna scrollea sola */
+  body.pos-page main.wrap.split > section,
+  body.pos-page main.wrap.split > aside{
+    height: 100%;
+    overflow: auto;
+  }
+
+  /* compactar un poco */
+  body.pos-page .section{
+    padding: 14px;
+  }
+  body.pos-page .pos-box{
+    margin-top: 12px;
+  }
+  body.pos-page .totals{
+    margin-top: 10px;
+  }
+}
+
+
+@media (min-width: 980px){
+  body.pos-page{
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.pos-page .top{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  body.pos-page main.wrap.split{
+    height: calc(100vh - 84px);
+    overflow: hidden;
+  }
+  body.pos-page main.wrap.split > section,
+  body.pos-page main.wrap.split > aside{
+    height: 100%;
+    overflow: auto;
+  }
+  body.pos-page .section{ padding: 14px; }
+  body.pos-page .pos-box{ margin-top: 12px; }
+  body.pos-page .totals{ margin-top: 10px; }
+}
+
+/* Si no lo tenías, agregá el logo de fondo (ruta assets/img) */
+body.bg-logo{
+  background-image:
+    url("../assets/img/logo2.svg"),
+    radial-gradient(1100px 600px at 10% 0%, rgba(14,165,233,.14), transparent 30%),
+    radial-gradient(900px 500px at 90% 0%, rgba(2,132,199,.10), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, var(--bg) 36%, var(--bg) 100%);
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position: center 180px, 10% 0%, 90% 0%, 0 0;
+  background-size: min(500px, 82vw), 760px 600px, 900px 500px, cover;
+  background-attachment: fixed, fixed, fixed, fixed;
+}
+
+/* ===== POS wide + premium polish ===== */
+
+/* Usa más ancho en Caja */
+.page--wide .wrap{
+  max-width: 1600px;
+}
+
+/* Split más “POS” (más espacio a la izquierda) */
+.split--pos{
+  display: grid;
+  grid-template-columns: 1.55fr .85fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 980px){
+  .split--pos{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Aside sticky (opcional, se siente premium en pantallas grandes) */
+.pos-aside{
+  position: sticky;
+  top: 86px; /* debajo del header */
+}
+
+/* Tarjetas más premium */
+.section{
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,.10);
+  box-shadow: 0 18px 55px rgba(2,8,23,.08);
+}
+
+/* Resultados en grid para aprovechar ancho */
+.pos-results{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 520px){
+  .pos-results{ grid-template-columns: 1fr; }
+}
+
+/* Botón de resultado más pro */
+.pos-result{
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 16px;
+}
+.pos-result__name{
+  display:block;
+  font-weight:700;
+}
+.pos-result__meta{
+  display:block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(15,23,42,.62);
+}
+
+/* Botón cobrar más “call to action” */
+.pos-pay{
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-size: 16px;
+  box-shadow: 0 18px 40px rgba(16,185,129,.18);
+}
+
+/* ===== POS: evitar scroll para ver totales ===== */
+
+/* En pantallas grandes, fijá la columna derecha (cobro) y que lo que scrollea sea la izquierda */
+@media (min-width: 981px){
+  .split--pos{
+    align-items: start;
+  }
+
+  /* hace que el layout use casi toda la altura visible */
+  .pos-page .split--pos{
+    min-height: calc(80vh - 50px); /* 86px ~ header */
+  }
+
+  /* izquierda: se puede scrollear internamente */
+  .pos-page .split--pos > section.section{
+    max-height: calc(100vh - 44px);
+    overflow: auto;
+    padding-bottom: 14px;
+  }
+
+  /* derecha: queda siempre visible */
+  .pos-page .pos-aside{
+    max-height: calc(100vh - 86px);
+    overflow: auto;
+  }
+}
+
+/* Totales “pegados” abajo dentro del Carrito */
+.pos-box{
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-box .table-wrap{
+  flex: 1 1 auto;
+  min-height: 140px;
+  overflow: auto;
+}
+
+/* ===== POS: achicar bloque "Buscar/Agregar" para que entre mejor ===== */
+.pos-page .pos-add{
+  gap: 5px;                 /* menos aire */
+  margin-bottom: 5px;
+}
+
+/* Labels y tip más chicos */
+.pos-page .pos-add label{
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.pos-page .pos-add .muted{
+  font-size: 12px;
+  line-height: 1.25;
+  margin-top: 6px;
+}
+
+/* Inputs más bajos */
+.pos-page .pos-add input{
+  padding: 10px 12px;        /* antes más alto */
+  border-radius: 14px;
+}
+
+/* Cantidad y botón más compactos */
+.pos-page .pos-add__qty input{
+  width: 100%;
+  padding: 10px 12px;
+}
+.pos-page .pos-add__btn .btn{
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+
+/* Encabezado de sección "Venta" un poco más chico */
+.pos-page .section__title{
+  font-size: 18px;
+}
+.pos-page .section__head{
+  margin-bottom: 10px;
+}
+
+button.btn{
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
 }

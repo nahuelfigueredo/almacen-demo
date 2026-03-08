@@ -9,8 +9,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ====== DEMO TRACKING (MVP) ======
-const ADMIN_KEY = process.env.DEMO_ADMIN_KEY || "CAMBIAR_ESTA_CLAVE";
-const LOG_FILE = path.join(__dirname, "demo-logins.jsonl");
+const ADMIN_KEY = process.env.DEMO_ADMIN_KEY ||"mcndigitalstudio" ;
+console.log("ADMIN_KEY ACTUAL:", ADMIN_KEY);
 
 function appendJSONL(obj) {
   fs.appendFileSync(LOG_FILE, JSON.stringify(obj) + "\n", "utf8");
@@ -72,3 +72,14 @@ app.get("/admin/demo-stats", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+
+const express = require("express");
+const path = require("path");
+
+const app = express();
+
+// ✅ servir carpeta public
+app.use(express.static(path.join(__dirname, "public")));
+
+app.listen(3000, () => console.log("http://localhost:3000"));

@@ -1,10 +1,14 @@
-
-
-
-
 /* =========================================================
-   ALMACEN APP — app.js (MVP Offline)
-   LocalStorage + POS + Stock + Caja diaria + Auth (PIN)
+   ALMACEN APP — app.js (MVP Offline) + CASH SESSIONS (PRO)
+
+   Incluye:
+   - Cash Sessions v2 (migración desde legacy)
+   - AddSale consistente con cash state
+   - Auto-recorte de ventas (MAX_SALES) + limpieza de salesIds
+   - Seed demo de productos
+   - Auth por PIN + Roles
+   - License demo->full
+
 ========================================================= */
 
 /* ========= Config ========= */
@@ -19,24 +23,23 @@ const LS_KEYS = {
   AUTH_SESSION: "almacen_session_v1",
 };
 
+// Mantener solo las ventas más recientes (newest-first)
+// 4500 ≈ 45 días a 100 ventas/día (recomendado para dejar margen)
+const MAX_SALES = 4500;
+
 /* ========= Utils ========= */
 function nowISO(){ return new Date().toISOString(); }
-
 function money(n){
   const v = Number(n || 0);
   return v.toLocaleString("es-AR", { style:"currency", currency:"ARS", minimumFractionDigits: 2 });
 }
-
 function num(n){
   const v = Number(n);
   return Number.isFinite(v) ? v : 0;
 }
-
 function roundQty(q){
-  // 3 decimales (kg/litro)
   return Math.round(num(q) * 1000) / 1000;
 }
-
 function uid(prefix="id"){
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
@@ -73,15 +76,9 @@ function saveJSON(key, value){
 /* =========================================================
    Domain: Products
 ========================================================= */
-function getProducts(){
-  return loadJSON(LS_KEYS.PRODUCTS, []);
-}
-function setProducts(list){
-  saveJSON(LS_KEYS.PRODUCTS, list);
-}
-function findProductById(id){
-  return getProducts().find(p => p.id === id) || null;
-}
+function getProducts(){ return loadJSON(LS_KEYS.PRODUCTS, []); }
+function setProducts(list){ saveJSON(LS_KEYS.PRODUCTS, list); }
+function findProductById(id){ return getProducts().find(p => p.id === id) || null; }
 function findProductByBarcode(code){
   const c = String(code || "").trim();
   if(!c) return null;
@@ -106,7 +103,7 @@ function deleteProduct(id){
 }
 
 /* =========================================================
-   Stock (simple adjust)
+   Stock
 ========================================================= */
 function adjustStock(productId, deltaQty){
   const list = getProducts();
@@ -119,16 +116,12 @@ function adjustStock(productId, deltaQty){
 /* =========================================================
    Kardex: Stock Moves
 ========================================================= */
-function getStockMoves(){
-  return loadJSON(LS_KEYS.STOCK_MOVES, []);
-}
+function getStockMoves(){ return loadJSON(LS_KEYS.STOCK_MOVES, []); }
 function addStockMove(move){
   const list = getStockMoves();
   list.unshift(move);
   saveJSON(LS_KEYS.STOCK_MOVES, list);
 }
-
-// IN/OUT aplica stock; ADJ se usa desde recordStockDelta/Set
 function recordStockMove({ type, productId, qty, unitCost = 0, note = "", refType = "", refId = "" }){
   const pBefore = findProductById(productId);
   if(!pBefore) throw new Error("Producto no encontrado");
@@ -137,8 +130,7 @@ function recordStockMove({ type, productId, qty, unitCost = 0, note = "", refTyp
   if(q <= 0) throw new Error("Cantidad inválida");
 
   const before = roundQty(pBefore.stock);
-
-  const delta = (type === "OUT") ? -q : q; // IN suma, OUT resta
+  const delta = (type === "OUT") ? -q : q;
   adjustStock(productId, delta);
 
   const pAfter = findProductById(productId);
@@ -147,7 +139,7 @@ function recordStockMove({ type, productId, qty, unitCost = 0, note = "", refTyp
   const move = {
     id: uid("mv"),
     createdAt: nowISO(),
-    type, // IN | OUT
+    type, // IN | OUT | ADJ
     productId,
     productName: pBefore.name,
     qty: q,
@@ -163,7 +155,6 @@ function recordStockMove({ type, productId, qty, unitCost = 0, note = "", refTyp
   return move;
 }
 
-/* ========= Ajustes (ADJ) ========= */
 function recordStockDelta({ productId, delta, note = "", refType = "ADJUST", refId = "" }){
   const pBefore = findProductById(productId);
   if(!pBefore) throw new Error("Producto no encontrado");
@@ -184,7 +175,7 @@ function recordStockDelta({ productId, delta, note = "", refType = "ADJUST", ref
     productId,
     productName: pBefore.name,
     qty: roundQty(Math.abs(d)),
-    delta: d, // signed
+    delta: d,
     stockBefore: before,
     stockAfter: after,
     unitCost: 0,
@@ -218,17 +209,14 @@ function recordStockSet({ productId, newStock, note = "", refType = "INVENTORY",
 }
 
 /* =========================================================
-   Domain: Stock Entries (Entradas)
+   Stock Entries
 ========================================================= */
-function getStockEntries(){
-  return loadJSON(LS_KEYS.STOCK_ENTRIES, []);
-}
+function getStockEntries(){ return loadJSON(LS_KEYS.STOCK_ENTRIES, []); }
 function addStockEntry(entry){
   const list = getStockEntries();
   list.unshift(entry);
   saveJSON(LS_KEYS.STOCK_ENTRIES, list);
 }
-
 function registerStockEntry({ productId, qty, unitCost, supplier, note }){
   const p = findProductById(productId);
   if(!p) throw new Error("Producto no encontrado");
@@ -236,7 +224,6 @@ function registerStockEntry({ productId, qty, unitCost, supplier, note }){
   const q = roundQty(qty);
   if(q <= 0) throw new Error("Cantidad inválida");
 
-  // Kardex IN + stock
   recordStockMove({
     type: "IN",
     productId,
@@ -247,7 +234,6 @@ function registerStockEntry({ productId, qty, unitCost, supplier, note }){
     refId: ""
   });
 
-  // actualiza costo si vino > 0
   const uc = num(unitCost);
   if(uc > 0){
     const updated = findProductById(productId);
@@ -271,17 +257,14 @@ function registerStockEntry({ productId, qty, unitCost, supplier, note }){
 }
 
 /* =========================================================
-   Domain: Price Changes (Aumentos)
+   Price Changes
 ========================================================= */
-function getPriceChanges(){
-  return loadJSON(LS_KEYS.PRICE_CHANGES, []);
-}
+function getPriceChanges(){ return loadJSON(LS_KEYS.PRICE_CHANGES, []); }
 function addPriceChange(change){
   const list = getPriceChanges();
   list.unshift(change);
   saveJSON(LS_KEYS.PRICE_CHANGES, list);
 }
-
 function roundPrice(value, rounding){
   const v = num(value);
   if(!rounding || rounding === "NONE") return v;
@@ -289,14 +272,12 @@ function roundPrice(value, rounding){
   if(step <= 0) return v;
   return Math.round(v / step) * step;
 }
-
 function applyPriceIncrease({ scope, category, percent, rounding }){
   const pct = num(percent);
   if(!Number.isFinite(pct) || pct === 0) throw new Error("Porcentaje inválido (no puede ser 0)");
 
   const list = getProducts();
   const cat = String(category || "").trim().toLowerCase();
-
   if(scope !== "ALL" && !cat) throw new Error("Elegí una categoría válida");
 
   const target = list
@@ -312,7 +293,7 @@ function applyPriceIncrease({ scope, category, percent, rounding }){
     const oldPrice = num(p.price);
     let newPrice = oldPrice * factor;
     newPrice = roundPrice(newPrice, rounding);
-    newPrice = Math.max(0, Math.round(newPrice)); // precio entero ARS (simple)
+    newPrice = Math.max(0, Math.round(newPrice));
     if(newPrice !== oldPrice){
       p.price = newPrice;
       items.push({ productId: p.id, name: p.name, oldPrice, newPrice });
@@ -337,26 +318,127 @@ function applyPriceIncrease({ scope, category, percent, rounding }){
 }
 
 /* =========================================================
-   Domain: Cash & Sales
+   CASH SESSIONS (PRO)
 ========================================================= */
+function _cashStateDefault(){
+  return { version: 2, currentSessionId: null, sessions: [] };
+}
+
+function _isLegacyCashShape(obj){
+  return obj && typeof obj === "object" && typeof obj.open === "boolean" && "totals" in obj;
+}
+
+function _migrateCashIfNeeded(){
+  const raw = localStorage.getItem(LS_KEYS.CASH);
+  if(!raw) return;
+
+  let parsed = null;
+  try{ parsed = JSON.parse(raw); }catch{ return; }
+
+  if(parsed && parsed.version === 2 && Array.isArray(parsed.sessions)) return;
+
+  if(_isLegacyCashShape(parsed)){
+    const legacy = parsed;
+    const state = _cashStateDefault();
+
+    const sessionId = uid("cs");
+    const session = {
+      id: sessionId,
+      open: !!legacy.open,
+      openedAt: legacy.openedAt || null,
+      openingAmount: num(legacy.openingAmount),
+      closedAt: legacy.closedAt || null,
+      totals: legacy.totals || { cash:0, mp:0, dni:0, card:0 },
+      salesIds: legacy.salesIds || []
+    };
+
+    state.sessions = [session];
+    state.currentSessionId = sessionId;
+
+    saveJSON(LS_KEYS.CASH, state);
+  }
+}
+
+function getCashState(){
+  _migrateCashIfNeeded();
+  return loadJSON(LS_KEYS.CASH, _cashStateDefault());
+}
+
+function setCashState(state){
+  saveJSON(LS_KEYS.CASH, state);
+}
+
+function getCashSessionById(id){
+  const st = getCashState();
+  return st.sessions.find(s => s.id === id) || null;
+}
+
+function getCurrentCashSession(){
+  const st = getCashState();
+  if(!st.currentSessionId) return null;
+  return st.sessions.find(s => s.id === st.currentSessionId) || null;
+}
+
+function listCashSessions(){
+  const st = getCashState();
+  return Array.isArray(st.sessions) ? st.sessions : [];
+}
+
+// Compat
 function getCash(){
-  return loadJSON(LS_KEYS.CASH, {
+  const s = getCurrentCashSession();
+  if(s) return s;
+  return {
     open: false,
     openedAt: null,
     openingAmount: 0,
     closedAt: null,
     totals: { cash:0, mp:0, dni:0, card:0 },
     salesIds: []
-  });
-}
-function setCash(cash){
-  saveJSON(LS_KEYS.CASH, cash);
+  };
 }
 
+/* ===== setCash (blindado) — trabaja sobre st ===== */
+function setCash(cashLike){
+  const st = getCashState();
+  const cur = (st.currentSessionId)
+    ? st.sessions.find(s => s.id === st.currentSessionId)
+    : null;
+
+  if(!cur){
+    throw new Error("No hay sesión de caja. Usá openCash(openingAmount) para crear/abrir la caja.");
+  }
+
+  const patch = Object.assign({}, cashLike || {});
+
+  // Nunca permitir reabrir o "des-cerrar"
+  if(Object.prototype.hasOwnProperty.call(patch, "open") && patch.open === true && cur.open !== true){
+    throw new Error("setCash() no puede abrir la caja. Usá openCash(openingAmount).");
+  }
+  if(Object.prototype.hasOwnProperty.call(patch, "closedAt") && patch.closedAt == null && cur.closedAt != null){
+    throw new Error("setCash() no puede borrar closedAt de una sesión cerrada.");
+  }
+
+  // Whitelist de campos seguros
+  const allowed = { totals:1, salesIds:1, openingAmount:1, openedAt:1 };
+  Object.keys(patch).forEach(k => { if(!allowed[k]) delete patch[k]; });
+
+  Object.assign(cur, patch);
+  setCashState(st);
+}
+
+/* ===== openCash (definido y exportable) ===== */
 function openCash(openingAmount){
-  const cash = getCash();
-  if(cash.open) throw new Error("La caja ya está abierta");
-  const next = {
+  const st = getCashState();
+  const cur = (st.currentSessionId)
+    ? st.sessions.find(s => s.id === st.currentSessionId)
+    : null;
+
+  if(cur && cur.open) throw new Error("La caja ya está abierta");
+
+  const id = uid("cs");
+  const session = {
+    id,
     open: true,
     openedAt: nowISO(),
     openingAmount: num(openingAmount),
@@ -364,26 +446,164 @@ function openCash(openingAmount){
     totals: { cash:0, mp:0, dni:0, card:0 },
     salesIds: []
   };
-  setCash(next);
-  return next;
+
+  st.sessions.unshift(session);
+  st.currentSessionId = id;
+  setCashState(st);
+
+  return session;
 }
 
+/* ===== closeCash (robusto) ===== */
 function closeCash(){
-  const cash = getCash();
-  if(!cash.open) throw new Error("La caja ya está cerrada");
-  cash.open = false;
-  cash.closedAt = nowISO();
-  setCash(cash);
-  return cash;
+  const st = getCashState();
+
+  const id = st.currentSessionId;
+  if(!id) throw new Error("No hay sesión de caja");
+
+  const cur = st.sessions.find(s => s.id === id);
+  if(!cur) throw new Error("Sesión actual no encontrada");
+  if(!cur.open) throw new Error("La caja ya está cerrada");
+
+  cur.open = false;
+  cur.closedAt = nowISO();
+
+  setCashState(st);
+  return cur;
 }
 
-function getSales(){
-  return loadJSON(LS_KEYS.SALES, []);
+/* =========================================================
+   Sales
+========================================================= */
+function getSales(){ return loadJSON(LS_KEYS.SALES, []); }
+
+function _trimCashSalesIdsToExisting(st, keptSales){
+  const keep = new Set((keptSales || []).map(x => x.id));
+  (st.sessions || []).forEach(sess => {
+    if(!Array.isArray(sess.salesIds)) return;
+    sess.salesIds = sess.salesIds.filter(id => keep.has(id));
+  });
 }
+
 function addSale(sale){
+  const st = getCashState();
+  const cur = (st.currentSessionId)
+    ? st.sessions.find(s => s.id === st.currentSessionId)
+    : null;
+
+  const s = Object.assign({}, sale);
+
+  if(cur && cur.open){
+    s.cashSessionId = cur.id;
+
+    const p = s.payments || {};
+    cur.totals.cash = num(cur.totals.cash) + num(p.cash);
+    cur.totals.mp   = num(cur.totals.mp)   + num(p.mp);
+    cur.totals.dni  = num(cur.totals.dni)  + num(p.dni);
+    cur.totals.card = num(cur.totals.card) + num(p.card);
+
+    const prev = Array.isArray(cur.salesIds) ? cur.salesIds : [];
+    if(prev.indexOf(s.id) === -1) prev.push(s.id);
+    cur.salesIds = prev;
+
+    setCashState(st);
+  }else{
+    s.cashSessionId = s.cashSessionId || null;
+  }
+
   const sales = getSales();
-  sales.unshift(sale);
+  sales.unshift(s);
+
+  // ✅ AUTO-RECORTE (newest-first)
+  if(sales.length > MAX_SALES){
+    sales.length = MAX_SALES;
+    _trimCashSalesIdsToExisting(st, sales);
+    setCashState(st);
+  }
+
   saveJSON(LS_KEYS.SALES, sales);
+}
+
+function findSaleById(id){
+  return getSales().find(s => s.id === id) || null;
+}
+
+function updateSale(updatedSale){
+  const sales = getSales();
+  const idx = sales.findIndex(s => s.id === updatedSale.id);
+  if(idx < 0) throw new Error("Venta no encontrada");
+  sales[idx] = updatedSale;
+  saveJSON(LS_KEYS.SALES, sales);
+  return updatedSale;
+}
+
+function _sumPayments(payments){
+  const p = payments || {};
+  return {
+    cash: num(p.cash),
+    mp: num(p.mp),
+    dni: num(p.dni),
+    card: num(p.card)
+  };
+}
+
+function voidSale({ saleId, reason = "Anulación", note = "" } = {}){
+  const r = requireRole(PERMS.seller_admin_owner);
+  if(!r.ok) throw new Error("Sin permiso para anular ventas");
+
+  const sale = findSaleById(saleId);
+  if(!sale) throw new Error("Venta no encontrada");
+  if(sale.voided) throw new Error("La venta ya está anulada");
+
+  const msg = `${String(reason || "Anulación").trim()}. ${String(note || "").trim()}`.trim();
+
+  (sale.items || []).forEach(it => {
+    const productId = it.productId;
+    const qty = roundQty(it.qty);
+    if(!productId || qty <= 0) return;
+
+    recordStockMove({
+      type: "IN",
+      productId,
+      qty,
+      unitCost: 0,
+      note: `Anulación venta ${sale.id}. ${msg}`.trim(),
+      refType: "VOID",
+      refId: sale.id
+    });
+  });
+
+  const st = getCashState();
+  const sessionId = sale.cashSessionId;
+  const session = sessionId ? st.sessions.find(x => x.id === sessionId) : null;
+
+  let adjusted = false;
+
+  if(session){
+    const pay = _sumPayments(sale.payments);
+
+    session.totals.cash = Math.max(0, num(session.totals.cash) - pay.cash);
+    session.totals.mp   = Math.max(0, num(session.totals.mp)   - pay.mp);
+    session.totals.dni  = Math.max(0, num(session.totals.dni)  - pay.dni);
+    session.totals.card = Math.max(0, num(session.totals.card) - pay.card);
+
+    session.salesIds = (session.salesIds || []).filter(x => x !== sale.id);
+    setCashState(st);
+    adjusted = true;
+  }
+
+  const updated = Object.assign({}, sale, {
+    voided: true,
+    voidedAt: nowISO(),
+    voidReason: String(reason || "").trim(),
+    voidNote: String(note || "").trim(),
+    voidCashAdjusted: adjusted,
+    voidedBy: r.me && r.me.name ? r.me.name : "",
+    voidedRole: r.me && r.me.role ? r.me.role : ""
+  });
+
+  updateSale(updated);
+  return updated;
 }
 
 /* =========================================================
@@ -433,25 +653,13 @@ function ensureSeed(){
 
 /* =========================================================
    AUTH (PIN + Roles)
-   Roles: owner | admin | seller
 ========================================================= */
-function getUsers(){
-  return loadJSON(LS_KEYS.AUTH_USERS, []);
-}
-function setUsers(list){
-  saveJSON(LS_KEYS.AUTH_USERS, list);
-}
-function getSession(){
-  return loadJSON(LS_KEYS.AUTH_SESSION, null);
-}
-function setSession(session){
-  saveJSON(LS_KEYS.AUTH_SESSION, session);
-}
-function clearSession(){
-  localStorage.removeItem(LS_KEYS.AUTH_SESSION);
-}
+function getUsers(){ return loadJSON(LS_KEYS.AUTH_USERS, []); }
+function setUsers(list){ saveJSON(LS_KEYS.AUTH_USERS, list); }
+function getSession(){ return loadJSON(LS_KEYS.AUTH_SESSION, null); }
+function setSession(session){ saveJSON(LS_KEYS.AUTH_SESSION, session); }
+function clearSession(){ localStorage.removeItem(LS_KEYS.AUTH_SESSION); }
 
-// hash simple (no criptográfico) para no guardar PIN plano
 function pinHash(pin){
   const s = String(pin || "").trim();
   let h = 0;
@@ -461,21 +669,70 @@ function pinHash(pin){
   return "h" + h.toString(16);
 }
 
-// crea usuarios default si no existen
-function ensureAuthSeed(){
-  const users = getUsers();
-  if(users.length) return;
+function isStrongPin(pin){
+  const s = String(pin ?? "").trim();
+  if(!/^\d+$/.test(s)) return { ok:false, message:"PIN debe ser numérico" };
+  if(s.length < 4) return { ok:false, message:"PIN muy corto (mínimo 4)" };
+  if(s.length > 8) return { ok:false, message:"PIN muy largo (máximo 8)" };
+  const weak = new Set(["0000","1111","2222","3333","4444","5555","6666","7777","8888","9999","1234"]);
+  if(weak.has(s)) return { ok:false, message:"PIN muy común. Elegí otro." };
+  return { ok:true };
+}
 
-  // ✅ Cambiá estos PINs antes de entregar
+function defaultUsers(){
   const ownerPin  = "9999";
   const adminPin  = "1234";
   const sellerPin = "0000";
 
-  setUsers([
+  return [
     { id: uid("u"), name: "Dueño",    role: "owner",  pin: pinHash(ownerPin),  active: true },
     { id: uid("u"), name: "Admin",    role: "admin",  pin: pinHash(adminPin),  active: true },
     { id: uid("u"), name: "Vendedor", role: "seller", pin: pinHash(sellerPin), active: true },
-  ]);
+  ];
+}
+
+function ensureAuthSeed(){
+  const users = getUsers();
+  if(users.length) return;
+  setUsers(defaultUsers());
+}
+
+function resetUsersToDefault(){
+  const r = requireRole(PERMS.owner_only);
+  if(!r.ok) throw new Error("Sin permiso para resetear usuarios");
+  setUsers(defaultUsers());
+  clearSession();
+  return true;
+}
+
+function updateUserPin(userId, newPin){
+  const r = requireRole(PERMS.owner_only);
+  if(!r.ok) throw new Error("Sin permiso para cambiar PIN");
+
+  const v = isStrongPin(newPin);
+  if(!v.ok) throw new Error(v.message);
+
+  const users = getUsers();
+  const u = users.find(x => x.id === userId);
+  if(!u) throw new Error("Usuario no encontrado");
+
+  u.pin = pinHash(newPin);
+  setUsers(users);
+  return true;
+}
+
+function toggleUserActive(userId){
+  const r = requireRole(PERMS.owner_only);
+  if(!r.ok) throw new Error("Sin permiso para activar/desactivar");
+
+  const users = getUsers();
+  const u = users.find(x => x.id === userId);
+  if(!u) throw new Error("Usuario no encontrado");
+  if(u.role === "owner") throw new Error("No podés desactivar al Dueño");
+
+  u.active = !(u.active !== false);
+  setUsers(users);
+  return u.active;
 }
 
 function loginWithPin(pin){
@@ -489,9 +746,7 @@ function loginWithPin(pin){
   return { ok:true, session };
 }
 
-function logout(){
-  clearSession();
-}
+function logout(){ clearSession(); }
 
 function getMe(){
   const s = getSession();
@@ -515,7 +770,6 @@ function requireRole(allowedRoles){
   return { ok:true, me };
 }
 
-// redirige a login si no tiene sesión o permiso
 function guardPage(allowedRoles){
   const r = requireRole(allowedRoles);
   if(!r.ok){
@@ -525,17 +779,11 @@ function guardPage(allowedRoles){
   return r;
 }
 
-/* ================= LICENSE (DEMO -> FULL) =================
-- Guarda licencia en localStorage
-- Sin backend (MVP)
-=========================================================== */
+/* ================= LICENSE (DEMO -> FULL) ================= */
 const LICENSE = {
   KEY: "almacen_license_v1",
-  // Cambiá este secreto por uno tuyo (no lo compartas)
   SECRET: "NF-ALMACEN-2026"
 };
-
-// token muy simple: BASE64("SECRET|cliente|YYYY-MM-DD")
 function _b64(str){ return btoa(unescape(encodeURIComponent(str))); }
 function _ub64(str){ return decodeURIComponent(escape(atob(str))); }
 
@@ -543,7 +791,6 @@ function buildLicenseToken({ customer = "cliente", date = "" } = {}){
   const payload = `${LICENSE.SECRET}|${String(customer).trim()}|${String(date).trim()}`;
   return _b64(payload);
 }
-
 function activateLicense(token){
   try{
     const decoded = _ub64(String(token || "").trim());
@@ -565,21 +812,14 @@ function activateLicense(token){
     return { ok:false, message:"Token inválido" };
   }
 }
-
 function getLicense(){
-  try{
-    return JSON.parse(localStorage.getItem(LICENSE.KEY) || "null");
-  }catch{
-    return null;
-  }
+  try{ return JSON.parse(localStorage.getItem(LICENSE.KEY) || "null"); }
+  catch{ return null; }
 }
-
 function isLicensed(){
   const lic = getLicense();
   return !!(lic && lic.status === "FULL" && lic.token);
 }
-
-
 
 /* =========================================================
    Public API
@@ -595,9 +835,14 @@ window.App = {
   getProducts, setProducts, searchProductsByName, findProductById, findProductByBarcode,
   upsertProduct, deleteProduct,
 
-  // cash & sales
+  // cash sessions (new)
+  getCashState, setCashState, listCashSessions, getCashSessionById, getCurrentCashSession,
+
+  // cash compat + actions
   getCash, setCash, openCash, closeCash,
-  getSales, addSale,
+
+  // sales
+  getSales, addSale, findSaleById, updateSale, voidSale,
 
   // stock
   adjustStock,
@@ -610,14 +855,15 @@ window.App = {
   getPriceChanges, applyPriceIncrease,
 
   // auth
-  ensureAuthSeed, loginWithPin, logout, getMe, guardPage, PERMS,
+  ensureAuthSeed,
+  getUsers, setUsers,
+  updateUserPin, toggleUserActive, resetUsersToDefault,
+  isStrongPin,
+  loginWithPin, logout, getMe, guardPage, PERMS,
 
-
-// license
+  // license
   getLicense,
   isLicensed,
   activateLicense,
   buildLicenseToken,
 };
-
-

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M3 13.5 10.5 6l4 4L21 3.5" stroke="currentColor" stroke-width="1.8" />
+            <path d="M3 20h18" stroke="currentColor" stroke-width="1.8" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand__name">Dashboard</div>
+          <div class="brand__sub">Resumen • Caja • Accesos</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <a class="btn btn--primary" href="./caja.html">Ir a Caja (POS)</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" style="max-width:1100px">
+    <section class="section">
+      <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+        <div>
+          <h3 style="margin:0 0 6px">Sesión</h3>
+          <div class="muted" id="meLbl">—</div>
+          <div class="muted" id="lastActionLbl" style="margin-top:6px">—</div>
+        </div>
+
+        <div class="row" style="gap:10px;flex-wrap:wrap">
+          <a class="btn" href="./cierre-caja.html">Caja diaria</a>
+          <a class="btn" href="./reportes.html">Reportes</a>
+          <!-- BOTÓN / LINK: Cambiar usuario (PIN) -->
+<a class="btn" href="#" id="btnCambiarUsuario">Cambiar usuario (PIN)</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="margin-top:14px">
+      <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:end">
+        <div>
+          <h3 style="margin:0 0 6px">Caja actual</h3>
+          <div class="muted" id="cashLbl">—</div>
+          <div class="muted" id="cashSessionLbl">—</div>
+        </div>
+
+        <div class="row" style="gap:10px;flex-wrap:wrap">
+          <div style="width:220px">
+            <label for="openingAmount">Monto inicial</label>
+            <input id="openingAmount" type="number" value="0" min="0" step="0.01" inputmode="decimal" />
+          </div>
+          <button class="btn btn--primary" id="btnOpen" type="button">Abrir caja</button>
+          <button class="btn btn--danger" id="btnClose" type="button">Cerrar caja</button>
+        </div>
+      </div>
+
+      <div class="section" style="padding:10px;margin-top:12px">
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div><span class="muted">Efectivo</span><div><strong id="tCash">$0</strong></div></div>
+          <div><span class="muted">MP</span><div><strong id="tMP">$0</strong></div></div>
+          <div><span class="muted">DNI</span><div><strong id="tDNI">$0</strong></div></div>
+          <div><span class="muted">Tarjeta</span><div><strong id="tCard">$0</strong></div></div>
+          <div><span class="muted">Ventas</span><div><strong id="tSales">0</strong></div></div>
+          <div><span class="muted">Total</span><div><strong id="tTotal">$0</strong></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="margin-top:14px">
+      <div style="overflow:auto;margin-top:12px">
+        <table class="table" id="tblSessions">
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Apertura</th>
+              <th>Cierre</th>
+              <th>Inicial</th>
+              <th>Ventas</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="./js/app.js"></script>
+  <script>
+    App.ensureAuthSeed();
+    App.guardPage(App.PERMS.seller_admin_owner);
+
+    const meLbl = document.getElementById("meLbl");
+    const lastActionLbl = document.getElementById("lastActionLbl");
+
+    const cashLbl = document.getElementById("cashLbl");
+    const cashSessionLbl = document.getElementById("cashSessionLbl");
+
+    const openingAmount = document.getElementById("openingAmount");
+    const btnOpen = document.getElementById("btnOpen");
+    const btnClose = document.getElementById("btnClose");
+
+    const tCash = document.getElementById("tCash");
+    const tMP = document.getElementById("tMP");
+    const tDNI = document.getElementById("tDNI");
+    const tCard = document.getElementById("tCard");
+    const tSales = document.getElementById("tSales");
+    const tTotal = document.getElementById("tTotal");
+
+    const tbodySessions = document.querySelector("#tblSessions tbody");
+
+    function roleLabel(role){
+      if(role === "owner") return "Dueño";
+      if(role === "admin") return "Admin";
+      if(role === "seller") return "Vendedor";
+      return role || "-";
+    }
+
+    function sumTotals(t){
+      return App.num(t?.cash) + App.num(t?.mp) + App.num(t?.dni) + App.num(t?.card);
+    }
+
+    function fmtAR(iso){
+      if(!iso) return "-";
+      return new Date(iso).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
+    }
+
+    function render(){
+      const me = App.getMe();
+      meLbl.textContent = me ? `${me.name} (${roleLabel(me.role)})` : "Sin sesión";
+
+      const cur = App.getCurrentCashSession();
+
+      if(!cur){
+        cashLbl.textContent = "Sin sesión de caja. Abrí caja para empezar.";
+        cashSessionLbl.textContent = "—";
+        openingAmount.value = 0;
+
+        tCash.textContent = App.money(0);
+        tMP.textContent = App.money(0);
+        tDNI.textContent = App.money(0);
+        tCard.textContent = App.money(0);
+        tSales.textContent = "0";
+        tTotal.textContent = App.money(0);
+
+        btnOpen.disabled = false;
+        btnClose.disabled = true;
+      }else{
+        cashLbl.textContent = cur.open
+          ? `ABIERTA • ${fmtAR(cur.openedAt)}`
+          : `CERRADA • ${fmtAR(cur.closedAt)}`;
+
+        cashSessionLbl.textContent = `Sesión: ${cur.id}`;
+        openingAmount.value = Number(cur.openingAmount || 0);
+
+        tCash.textContent = App.money(cur.totals?.cash || 0);
+        tMP.textContent = App.money(cur.totals?.mp || 0);
+        tDNI.textContent = App.money(cur.totals?.dni || 0);
+        tCard.textContent = App.money(cur.totals?.card || 0);
+        tSales.textContent = String((cur.salesIds || []).length);
+        tTotal.textContent = App.money(sumTotals(cur.totals));
+
+        btnOpen.disabled = !!cur.open;
+        btnClose.disabled = !cur.open;
+      }
+
+      const sessions = App.listCashSessions();
+      tbodySessions.innerHTML = "";
+
+      sessions.slice(0, 10).forEach(s=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${s.open ? "ABIERTA" : "CERRADA"}</strong></td>
+          <td><small>${fmtAR(s.openedAt)}</small></td>
+          <td><small>${fmtAR(s.closedAt)}</small></td>
+          <td>${App.money(s.openingAmount || 0)}</td>
+          <td>${(s.salesIds || []).length}</td>
+          <td><strong>${App.money(sumTotals(s.totals))}</strong></td>
+        `;
+        tbodySessions.appendChild(tr);
+      });
+
+      if(!sessions.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" class="muted" style="padding:14px 8px">Sin sesiones todavía.</td>`;
+        tbodySessions.appendChild(tr);
+      }
+    }
+
+    btnOpen.addEventListener("click", ()=>{
+      lastActionLbl.textContent = "Última acción: click Abrir caja…";
+      try{
+        const cur = App.getCurrentCashSession();
+        if(cur && cur.open){
+          App.toast("La caja ya está abierta");
+          lastActionLbl.textContent = "Última acción: ya estaba abierta";
+          return;
+        }
+
+        const initial = Number(openingAmount.value || 0);
+        if(initial < 0){
+          App.toast("Monto inicial inválido");
+          lastActionLbl.textContent = "Última acción: monto inválido";
+          return;
+        }
+
+        App.openCash(initial);
+        App.toast("Caja abierta ✅");
+        lastActionLbl.textContent = "Última acción: caja abierta";
+        render();
+      }catch(err){
+        console.error(err);
+        App.toast(err.message || "Error");
+        lastActionLbl.textContent = `Última acción: ERROR abrir (${err?.message || err})`;
+      }
+    });
+
+    btnClose.addEventListener("click", ()=>{
+      lastActionLbl.textContent = "Última acción: click Cerrar caja…";
+      try{
+        App.closeCash();
+        App.toast("Caja cerrada ✅");
+        lastActionLbl.textContent = "Última acción: caja cerrada";
+        render();
+      }catch(err){
+        console.error(err);
+        App.toast(err.message || "Error");
+        lastActionLbl.textContent = `Última acción: ERROR cerrar (${err?.message || err})`;
+      }
+    });
+
+    render();
+
+    
+  (function wirePinButton(){
+    function bind(){
+      var el = document.getElementById("btnCambiarUsuario");
+      if(!el) return;
+
+      // evitar doble bind si se pega 2 veces
+      if(el.__boundPinBtn) return;
+      el.__boundPinBtn = true;
+
+      el.addEventListener("click", function(e){
+        e.preventDefault();
+
+        if(!confirm("¿Cambiar de usuario (volver a PIN)?")) return;
+
+        try{
+          if(window.App && typeof App.logout === "function"){
+            App.logout();
+          }else{
+            localStorage.removeItem("almacen_session_v1");
+          }
+        }catch(_e){}
+
+        var next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+        location.href = "./login.html?next=" + next;
+      });
+    }
+
+    // por si el script corre antes que el DOM
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", bind);
+    }else{
+      bind();
+    }
+  })();
+
+  </script>
+</body>
+</html>

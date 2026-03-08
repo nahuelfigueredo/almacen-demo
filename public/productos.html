@@ -4,42 +4,62 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Productos</title>
-  <link rel="stylesheet" href="./css/styles.css">
-<script src="./js/app.js"></script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./css/styles.css">
 </head>
+
 <body>
   <header class="top">
     <div class="wrap top__inner">
       <div class="brand">
-        <div class="brand__logo">A</div>
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 21v-9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4 7.5l8 4.5 8-4.5" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
         <div>
           <div class="brand__name">Productos</div>
-          <div class="brand__sub">Alta / Edición / Stock / Precio</div>
+          <div class="brand__sub">Alta · Edición · Stock · Precios</div>
         </div>
       </div>
+
       <div class="row">
         <a class="btn" href="./index.html">Volver</a>
         <a class="btn btn--primary" href="./caja.html">Ir a Caja</a>
+        <!-- BOTÓN / LINK: Cambiar usuario (PIN) -->
+<a class="btn" href="#" id="btnCambiarUsuario">Cambiar usuario (PIN)</a>
+
       </div>
     </div>
   </header>
 
   <main class="wrap split">
+    <!-- LISTADO -->
     <section class="section">
-      <h3>Listado</h3>
-      <div class="row" style="margin-bottom:10px">
-        <div style="flex:1;min-width:260px">
-          <label>Buscar</label>
-          <input id="q" placeholder="Nombre o categoría..." />
+      <div class="section__head">
+        <h3 class="section__title">Listado</h3>
+        <div class="muted" id="resultsInfo">0 productos</div>
+      </div>
+
+      <div class="filters">
+        <div class="filters__item">
+          <label for="q">Buscar</label>
+          <input id="q" placeholder="Nombre, categoría o código..." autocomplete="off" />
         </div>
-        <div style="width:200px">
-          <label>Filtrar categoría</label>
-          <input id="catFilter" placeholder="Ej: Bebidas" />
+
+        <div class="filters__item filters__item--sm">
+          <label for="catFilter">Categoría</label>
+          <input id="catFilter" placeholder="Ej: Bebidas" autocomplete="off" />
         </div>
       </div>
 
-      <div style="overflow:auto">
+      <div class="table-wrap">
         <table class="table" id="tbl">
           <thead>
             <tr>
@@ -49,65 +69,81 @@
               <th>Stock</th>
               <th>Mín</th>
               <th>Precio</th>
-              <th style="width:150px"></th>
+              <th style="width:160px"></th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
-      <div class="muted" style="margin-top:10px">
+
+      <div class="muted mt-10">
         Tip: si usás lector USB, podés completar “Código de barras” escaneando dentro del input.
       </div>
     </section>
 
+    <!-- FORM -->
     <aside class="section">
-      <h3 id="formTitle">Nuevo producto</h3>
+      <div class="section__head">
+        <h3 class="section__title" id="formTitle">Nuevo producto</h3>
+        <div class="muted">Campos principales</div>
+      </div>
 
       <input id="id" type="hidden" />
 
-      <label>Nombre</label>
-      <input id="name" placeholder="Ej: Yerba 1kg / Queso (kg)" />
-
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
-          <label>Categoría</label>
-          <input id="category" placeholder="Ej: Almacén, Bebidas..." />
+      <div class="form-grid">
+        <div class="form-grid__item">
+          <label for="name">Nombre</label>
+          <input id="name" placeholder="Ej: Yerba 1kg / Queso (kg)" />
         </div>
-        <div style="flex:1">
-          <label>Código de barras (opcional)</label>
-          <input id="barcode" placeholder="Escaneá o escribí..." />
+
+        <div class="form-grid__row">
+          <div class="form-grid__item">
+            <label for="category">Categoría</label>
+            <input id="category" placeholder="Ej: Almacén, Bebidas..." />
+          </div>
+
+          <div class="form-grid__item">
+            <label for="barcode">Código de barras (opcional)</label>
+            <input id="barcode" placeholder="Escaneá o escribí..." />
+          </div>
+        </div>
+
+        <div class="form-grid__row">
+          <div class="form-grid__item">
+            <label for="cost">Costo (opcional)</label>
+            <input id="cost" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+          </div>
+
+          <div class="form-grid__item">
+            <label for="price">Precio</label>
+            <input id="price" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+          </div>
+        </div>
+
+        <div class="form-grid__row">
+          <div class="form-grid__item">
+            <label for="stock">Stock (decimal)</label>
+            <input id="stock" type="number" step="0.001" min="0" value="0" inputmode="decimal" />
+          </div>
+
+          <div class="form-grid__item">
+            <label for="minStock">Stock mínimo</label>
+            <input id="minStock" type="number" step="0.001" min="0" value="0" inputmode="decimal" />
+          </div>
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
-          <label>Costo (opcional)</label>
-          <input id="cost" type="number" step="0.01" min="0" value="0" />
-        </div>
-        <div style="flex:1">
-          <label>Precio</label>
-          <input id="price" type="number" step="0.01" min="0" value="0" />
-        </div>
+      <div class="actions">
+        <button class="btn btn--primary" id="btnSave" type="button" style="flex:1">Guardar</button>
+        <button class="btn" id="btnNew" type="button">Nuevo</button>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <div style="flex:1">
-          <label>Stock (decimal)</label>
-          <input id="stock" type="number" step="0.001" min="0" value="0" />
-        </div>
-        <div style="flex:1">
-          <label>Stock mínimo</label>
-          <input id="minStock" type="number" step="0.001" min="0" value="0" />
-        </div>
+      <div class="actions">
+        <button class="btn btn--danger" id="btnDelete" type="button" style="flex:1" disabled>Eliminar</button>
       </div>
 
-      <div class="row" style="margin-top:12px">
-        <button class="btn btn--primary" id="btnSave" style="flex:1">Guardar</button>
-        <button class="btn" id="btnNew">Nuevo</button>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <button class="btn btn--danger" id="btnDelete" style="flex:1" disabled>Eliminar</button>
+      <div class="muted mt-10">
+        Recomendación: definí “mínimo” para que “Bajo stock” sea útil.
       </div>
     </aside>
   </main>
@@ -116,13 +152,12 @@
 
   <script>
     App.guardPage(App.PERMS.admin_or_owner);
-
-
     window.App.ensureSeed();
 
     const q = document.getElementById("q");
     const catFilter = document.getElementById("catFilter");
     const tbody = document.querySelector("#tbl tbody");
+    const resultsInfo = document.getElementById("resultsInfo");
 
     const formTitle = document.getElementById("formTitle");
     const idEl = document.getElementById("id");
@@ -166,27 +201,49 @@
       btnDelete.disabled = !editing;
     }
 
+    function isLowStock(p){
+      const stock = Number(p?.stock ?? 0);
+      const min = Number(p?.minStock ?? 0);
+      return min > 0 && stock <= min;
+    }
+
     function render(){
       const text = q.value.trim().toLowerCase();
       const cat = catFilter.value.trim().toLowerCase();
 
       const list = App.getProducts()
         .filter(p => (p.active !== false))
-        .filter(p => !text || (p.name||"").toLowerCase().includes(text) || (p.category||"").toLowerCase().includes(text))
+        .filter(p =>
+          !text ||
+          (p.name||"").toLowerCase().includes(text) ||
+          (p.category||"").toLowerCase().includes(text) ||
+          (p.barcode||"").toLowerCase().includes(text)
+        )
         .filter(p => !cat || (p.category||"").toLowerCase().includes(cat));
+
+      resultsInfo.textContent = `${list.length} producto${list.length === 1 ? "" : "s"}`;
 
       tbody.innerHTML = "";
       list.forEach(p => {
+        const low = isLowStock(p);
+
         const tr = document.createElement("tr");
+        if(low) tr.classList.add("row--low");
+
         tr.innerHTML = `
-          <td><strong>${p.name}</strong></td>
+          <td>
+            <div class="cell-title">
+              <strong>${p.name}</strong>
+              ${low ? `<span class="badge badge--warn">Bajo</span>` : ``}
+            </div>
+          </td>
           <td>${p.category || "-"}</td>
           <td><small>${p.barcode || "-"}</small></td>
-          <td>${App.roundQty(p.stock)}</td>
+          <td><strong>${App.roundQty(p.stock)}</strong></td>
           <td><small>${App.roundQty(p.minStock||0)}</small></td>
           <td><strong>${App.money(p.price)}</strong></td>
-          <td>
-            <button class="btn" data-edit="${p.id}">Editar</button>
+          <td class="cell-actions">
+            <button class="btn" type="button" data-edit="${p.id}">Editar</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -205,8 +262,9 @@
       const p = readForm();
       if(!p.name) return App.toast("Falta nombre");
       if(p.price <= 0) return App.toast("Precio inválido");
+
       App.upsertProduct(p);
-      App.toast("Guardado ✅");
+      App.toast("Guardado");
       render();
       setForm(null);
     };
@@ -216,6 +274,10 @@
     btnDelete.onclick = () => {
       const id = idEl.value;
       if(!id) return;
+
+      const ok = confirm("¿Eliminar este producto? Esta acción no se puede deshacer.");
+      if(!ok) return;
+
       App.deleteProduct(id);
       App.toast("Eliminado");
       render();
@@ -227,6 +289,44 @@
 
     render();
     setForm(null);
+
+
+    
+  (function wirePinButton(){
+    function bind(){
+      var el = document.getElementById("btnCambiarUsuario");
+      if(!el) return;
+
+      // evitar doble bind si se pega 2 veces
+      if(el.__boundPinBtn) return;
+      el.__boundPinBtn = true;
+
+      el.addEventListener("click", function(e){
+        e.preventDefault();
+
+        if(!confirm("¿Cambiar de usuario (volver a PIN)?")) return;
+
+        try{
+          if(window.App && typeof App.logout === "function"){
+            App.logout();
+          }else{
+            localStorage.removeItem("almacen_session_v1");
+          }
+        }catch(_e){}
+
+        var next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+        location.href = "./login.html?next=" + next;
+      });
+    }
+
+    // por si el script corre antes que el DOM
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", bind);
+    }else{
+      bind();
+    }
+  })();
+
   </script>
 </body>
 </html>

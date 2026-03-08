@@ -4,370 +4,463 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Caja (POS)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/styles.css">
-   
-
 </head>
-<body>
 
-<header class="top">
-  <div class="wrap top__inner">
-    <div class="brand">
-      <div class="brand__logo">A</div>
-      <div>
-        <div class="brand__name">Caja (POS)</div>
-        <div class="brand__sub">Búsqueda + lector USB + cobro</div>
-      </div>
-    </div>
-    <div class="row">
-      <a class="btn" href="./index.html">Volver</a>
-      <button class="btn btn--primary" id="btnFocusScan">
-        Escanear <span class="kbd">F2</span>
-      </button>
-    </div>
-  </div>
-</header>
-
-<main class="wrap split">
-
-  <!-- IZQUIERDA -->
-  <section class="section">
-    <h3>Venta</h3>
-
-    <div class="row" style="margin-bottom:10px;">
-      <div style="flex:1;min-width:260px">
-        <label>Buscar producto</label>
-        <input id="qName" autocomplete="off" placeholder="Ej: azúcar, coca..." />
-        <div class="muted" style="margin-top:6px">
-          Tip: escribí y tocá <strong>Agregar</strong> (toma el primer resultado) o seleccioná uno de la lista.
+<body class="pos-page page--wide">
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M7 4h10v4H7V4Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M6 8h12l1 12H5L6 8Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M9 12h6" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand__name">Caja (POS)</div>
+          <div class="brand__sub">Búsqueda · lector USB · cobro</div>
         </div>
       </div>
-      <div style="width:150px">
-        <label>Cantidad</label>
-        <input id="qty" type="number" step="0.001" min="0.001" value="1" />
-      </div>
-      <div style="align-self:end">
-        <button class="btn btn--primary" id="btnAddByName">Agregar</button>
+
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <button class="btn btn--primary" id="btnFocusScan" type="button">
+          Escanear <span class="kbd">F2</span>
+        </button>
       </div>
     </div>
+  </header>
 
-    <div class="section" style="padding:10px;margin-bottom:12px">
-      <strong>Resultados</strong>
-      <div id="results"></div>
-    </div>
-
-    <div class="section" style="padding:10px">
-      <div class="row" style="justify-content:space-between">
-        <strong>Carrito</strong>
-        <button class="btn btn--danger" id="btnClear">Vaciar</button>
+  <main class="wrap split split--pos">
+    <!-- IZQUIERDA -->
+    <section class="section">
+      <div class="section__head">
+        <h3 class="section__title">Venta</h3>
+        <div class="muted" id="saleHint">Listo</div>
       </div>
 
-      <table class="table" id="cartTable">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>Precio</th>
-            <th>Subtotal</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="pos-add">
+        <div class="pos-add__q">
+          <label for="qName">Buscar producto</label>
+          <input id="qName" autocomplete="off" placeholder="Ej: azúcar, coca o escaneá un código..." />
+          <div class="muted mt-8">
+            Tip: Enter agrega. Si escaneás un código de barras, se agrega directo al carrito.
+          </div>
+        </div>
 
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <div style="min-width:260px">
-          <div class="row" style="justify-content:space-between">
+        <div class="pos-add__qty">
+          <label for="qty">Cantidad</label>
+          <input id="qty" type="number" step="0.001" min="0.001" value="1" inputmode="decimal" />
+        </div>
+
+        <div class="pos-add__btn">
+          <button class="btn btn--primary" id="btnAddByName" type="button">Agregar</button>
+        </div>
+      </div>
+
+      <div class="section pos-box">
+        <div class="pos-box__head">
+          <strong>Resultados</strong>
+          <small class="muted" id="resultsCount">0</small>
+        </div>
+        <div id="results" class="pos-results"></div>
+      </div>
+
+      <div class="section pos-box">
+        <div class="pos-box__head">
+          <strong>Carrito</strong>
+          <button class="btn btn--danger" id="btnClear" type="button">Vaciar</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="cartTable">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cant.</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="totals">
+          <div class="totals__line">
             <span>Subtotal</span>
             <strong id="lblSubtotal">$0</strong>
           </div>
 
-          <div class="row" style="justify-content:space-between;margin-top:6px">
+          <div class="totals__line totals__line--input">
             <span>Descuento</span>
-            <input id="discount" type="number" value="0" style="width:120px" />
+            <input id="discount" type="number" value="0" inputmode="decimal" />
           </div>
 
-          <div class="row" style="justify-content:space-between;margin-top:8px">
+          <div class="totals__line totals__line--total">
             <span>Total</span>
             <strong id="lblTotal">$0</strong>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- DERECHA -->
-  <aside class="section">
-    <h3>Cobro</h3>
-
-    <!-- Estado de caja + link correcto -->
-    <div class="section" style="padding:10px;margin-bottom:12px">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <strong>Estado de Caja</strong>
-          <div class="muted" id="cashState">—</div>
-        </div>
+    <!-- DERECHA -->
+    <aside class="section pos-aside">
+      <div class="section__head">
+        <h3 class="section__title">Cobro</h3>
         <a class="btn" href="./cierre-caja.html">Caja diaria</a>
       </div>
-    </div>
 
-    <div class="row">
-      <div style="flex:1">
-        <label>Efectivo</label>
-        <input id="payCash" type="number" value="0" />
+      <div class="section pos-box">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div>
+            <strong>Estado de Caja</strong>
+            <div class="muted" id="cashState">—</div>
+          </div>
+        </div>
       </div>
-      <div style="flex:1">
-        <label>Mercado Pago</label>
-        <input id="payMP" type="number" value="0" />
+
+      <div class="pay-grid">
+        <div>
+          <label for="payCash">Efectivo</label>
+          <input id="payCash" type="number" value="0" inputmode="decimal" />
+        </div>
+        <div>
+          <label for="payMP">Mercado Pago</label>
+          <input id="payMP" type="number" value="0" inputmode="decimal" />
+        </div>
+        <div>
+          <label for="payDNI">Cuenta DNI</label>
+          <input id="payDNI" type="number" value="0" inputmode="decimal" />
+        </div>
+        <div>
+          <label for="payCard">Tarjetas</label>
+          <input id="payCard" type="number" value="0" inputmode="decimal" />
+        </div>
       </div>
-    </div>
 
-    <div class="row" style="margin-top:10px">
-      <div style="flex:1">
-        <label>Cuenta DNI</label>
-        <input id="payDNI" type="number" value="0" />
+      <div class="section pos-box">
+        <div class="totals">
+          <div class="totals__line">
+            <span>Pagado</span>
+            <strong id="lblPaid">$0</strong>
+          </div>
+          <div class="totals__line">
+            <span>Vuelto</span>
+            <strong id="lblChange">$0</strong>
+          </div>
+        </div>
       </div>
-      <div style="flex:1">
-        <label>Tarjetas</label>
-        <input id="payCard" type="number" value="0" />
-      </div>
-    </div>
 
-    <div class="section" style="padding:10px;margin-top:12px">
-      <div class="row" style="justify-content:space-between">
-        <span>Pagado</span>
-        <strong id="lblPaid">$0</strong>
-      </div>
-      <div class="row" style="justify-content:space-between">
-        <span>Vuelto</span>
-        <strong id="lblChange">$0</strong>
-      </div>
-    </div>
+      <button class="btn btn--ok pos-pay" id="btnPay" type="button">
+        Cobrar <span class="kbd">F9</span>
+      </button>
 
-    <button class="btn btn--ok" id="btnPay" style="margin-top:10px;width:100%">
-      Cobrar <span class="kbd">F9</span>
-    </button>
+      <input id="scanInput" class="scan-input" />
+    </aside>
+  </main>
 
-    <input id="scanInput" style="position:fixed;left:-9999px;" />
-  </aside>
+  <script src="./js/app.js"></script>
 
-</main>
+  <script>
+    let lastResults = [];
+    App.guardPage(App.PERMS.seller_admin_owner);
+    App.ensureSeed();
 
-<script src="./js/app.js"></script>
+    const qName = document.getElementById("qName");
+    const qtyEl = document.getElementById("qty");
+    const results = document.getElementById("results");
+    const resultsCount = document.getElementById("resultsCount");
+    const saleHint = document.getElementById("saleHint");
 
+    const cartBody = document.querySelector("#cartTable tbody");
 
+    const lblSubtotal = document.getElementById("lblSubtotal");
+    const lblTotal = document.getElementById("lblTotal");
+    const discountEl = document.getElementById("discount");
 
-<script>
-  let lastResults = [];
-   App.guardPage(App.PERMS.seller_admin_owner);
+    const payCash = document.getElementById("payCash");
+    const payMP = document.getElementById("payMP");
+    const payDNI = document.getElementById("payDNI");
+    const payCard = document.getElementById("payCard");
 
+    const lblPaid = document.getElementById("lblPaid");
+    const lblChange = document.getElementById("lblChange");
 
-  window.App.ensureSeed();
+    const scanInput = document.getElementById("scanInput");
+    const cashState = document.getElementById("cashState");
 
-  const qName = document.getElementById("qName");
-  const qtyEl = document.getElementById("qty");
-  const results = document.getElementById("results");
-  const cartBody = document.querySelector("#cartTable tbody");
+    const btnPay = document.getElementById("btnPay");
 
-  const lblSubtotal = document.getElementById("lblSubtotal");
-  const lblTotal = document.getElementById("lblTotal");
-  const discountEl = document.getElementById("discount");
+    let selectedProductId = null;
+    let cart = [];
 
-  const payCash = document.getElementById("payCash");
-  const payMP = document.getElementById("payMP");
-  const payDNI = document.getElementById("payDNI");
-  const payCard = document.getElementById("payCard");
-
-  const lblPaid = document.getElementById("lblPaid");
-  const lblChange = document.getElementById("lblChange");
-
-  const scanInput = document.getElementById("scanInput");
-  const cashState = document.getElementById("cashState");
-
-  let selectedProductId = null;
-  let cart = [];
-
-  function renderCashState(){
-    const cash = App.getCash ? App.getCash() : null;
-    if(!cash){
-      cashState.textContent = "Sin caja (abrila desde Caja diaria)";
-      return;
+    function looksLikeBarcode(text){
+      const s = String(text || "").trim();
+      return /^\d{8,14}$/.test(s);
     }
-    cashState.textContent = cash.open
-      ? `Abierta • ${new Date(cash.openedAt).toLocaleString("es-AR")} • Inicial: ${App.money(cash.openingAmount)}`
-      : "Cerrada (abrila desde Caja diaria)";
-  }
 
-  function renderResults(list){
-    results.innerHTML = "";
-    list.slice(0,8).forEach(p=>{
-      const btn = document.createElement("button");
-      btn.className = "btn";
-      btn.textContent = `${p.name} - ${App.money(p.price)} (Stock: ${App.roundQty(p.stock)})`;
-      btn.onclick = ()=>{
-        selectedProductId = p.id;
-        App.toast("Seleccionado");
-      };
-      results.appendChild(btn);
-    });
-  }
+    function renderCashState(){
+      const cur = App.getCurrentCashSession ? App.getCurrentCashSession() : null;
 
-  function updateResults(){
-    const list = App.searchProductsByName(qName.value);
-    lastResults = list;
-    renderResults(list);
-    selectedProductId = list[0]?.id || null;
-  }
+      if(!cur){
+        cashState.textContent = "Sin caja (abrila desde 'Caja diaria' o Dashboard)";
+        return;
+      }
 
-  function cartTotals(){
-    const subtotal = cart.reduce((a,it)=>a+(it.qty*it.price),0);
-    const discount = App.num(discountEl.value);
-    const total = Math.max(0, subtotal - discount);
-    return {subtotal,total};
-  }
+      cashState.textContent = cur.open
+        ? `Abierta • ${new Date(cur.openedAt).toLocaleString("es-AR")} • Inicial: ${App.money(cur.openingAmount)}`
+        : "Cerrada (abrila desde 'Caja diaria' o Dashboard)";
+    }
 
-  function renderCart(){
-    cartBody.innerHTML="";
-    cart.forEach((it,i)=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML=`
-        <td>${it.name}</td>
-        <td>${App.roundQty(it.qty)}</td>
-        <td>${App.money(it.price)}</td>
-        <td>${App.money(it.qty*it.price)}</td>
-        <td><button class="btn btn--danger" data-i="${i}">X</button></td>
-      `;
-      tr.querySelector("button").onclick=()=>{
-        cart.splice(i,1);
+    function renderResults(list){
+      results.innerHTML = "";
+      const show = list.slice(0,8);
+      resultsCount.textContent = String(show.length);
+
+      show.forEach(p=>{
+        const btn = document.createElement("button");
+        btn.className = "btn pos-result";
+        btn.type = "button";
+        btn.innerHTML = `
+          <span class="pos-result__name">${p.name}</span>
+          <span class="pos-result__meta">${App.money(p.price)} • Stock: ${App.roundQty(p.stock)}</span>
+        `;
+        btn.onclick = ()=>{
+          selectedProductId = p.id;
+          App.toast("Seleccionado");
+        };
+        results.appendChild(btn);
+      });
+    }
+
+    function updateResults(){
+      const list = App.searchProductsByName(qName.value);
+      lastResults = list;
+      renderResults(list);
+      selectedProductId = list[0]?.id || null;
+    }
+
+    function cartTotals(){
+      const subtotal = cart.reduce((a,it)=>a+(it.qty*it.price),0);
+      const discount = App.num(discountEl.value);
+      const total = Math.max(0, subtotal - discount);
+      return {subtotal,total};
+    }
+
+    function paidTotal(){
+      return App.num(payCash.value)+App.num(payMP.value)+App.num(payDNI.value)+App.num(payCard.value);
+    }
+
+    function renderCart(){
+      cartBody.innerHTML="";
+      cart.forEach((it,i)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`
+          <td>${it.name}</td>
+          <td><strong>${App.roundQty(it.qty)}</strong></td>
+          <td>${App.money(it.price)}</td>
+          <td><strong>${App.money(it.qty*it.price)}</strong></td>
+          <td><button class="btn btn--danger" type="button" data-i="${i}">X</button></td>
+        `;
+        tr.querySelector("button").onclick=()=>{
+          cart.splice(i,1);
+          renderCart();
+          renderTotals();
+        };
+        cartBody.appendChild(tr);
+      });
+    }
+
+    function renderTotals(){
+      const {subtotal,total}=cartTotals();
+      lblSubtotal.textContent=App.money(subtotal);
+      lblTotal.textContent=App.money(total);
+
+      const paid = paidTotal();
+      lblPaid.textContent=App.money(paid);
+      lblChange.textContent=App.money(Math.max(0,paid-total));
+
+      if(total > 0 && paid > 0 && paid < total){
+        saleHint.textContent = "Pago insuficiente";
+      }else{
+        saleHint.textContent = "Listo";
+      }
+    }
+
+    function addToCart(productId,qty){
+      const p=App.findProductById(productId);
+      if(!p) return;
+
+      const q=App.roundQty(qty);
+      if(q<=0) return;
+
+      const existing = cart.find(it => it.productId === p.id);
+      const nextQty = existing ? App.roundQty(existing.qty + q) : q;
+
+      if(p.stock < nextQty){
+        App.toast("Stock insuficiente");
+        return;
+      }
+
+      if(existing){
+        existing.qty = nextQty;
+      }else{
+        cart.push({productId:p.id,name:p.name,qty:q,price:p.price});
+      }
+
+      renderCart();
+      renderTotals();
+    }
+
+    function tryAddByBarcodeFromQName(){
+      const raw = qName.value.trim();
+      if(!raw) return false;
+      if(!looksLikeBarcode(raw)) return false;
+
+      const p = App.findProductByBarcode(raw);
+      if(!p) return false;
+
+      addToCart(p.id, qtyEl.value || 1);
+      qName.value = "";
+      updateResults();
+      App.toast("Agregado por código");
+      return true;
+    }
+
+    document.getElementById("btnAddByName").onclick=()=>{
+      const id = selectedProductId || lastResults[0]?.id;
+      if(!id){
+        return App.toast("No hay producto para agregar (buscá y elegí uno)");
+      }
+      addToCart(id, qtyEl.value || 1);
+      qName.focus();
+      qName.select();
+    };
+
+    document.getElementById("btnClear").onclick=()=>{
+      if(!cart.length) return;
+      const ok = confirm("¿Vaciar carrito?");
+      if(!ok) return;
+      cart=[];
+      renderCart();
+      renderTotals();
+    };
+
+    document.getElementById("btnPay").onclick=()=>{
+      if(!cart.length) return App.toast("Carrito vacío");
+
+      const cur = App.getCurrentCashSession ? App.getCurrentCashSession() : null;
+      if(!cur || !cur.open){
+        return App.toast("Caja cerrada. Abrila en 'Caja diaria' o Dashboard.");
+      }
+
+      const {subtotal,total}=cartTotals();
+      const paid = paidTotal();
+
+      if(total > 0 && paid < total){
+        return App.toast("Pago insuficiente");
+      }
+
+      btnPay.disabled = true;
+
+      try{
+        const sale={
+          id:App.uid("sale"),
+          createdAt:new Date().toISOString(),
+          items:cart,
+          subtotal,
+          discount:App.num(discountEl.value),
+          total,
+          payments:{
+            cash:App.num(payCash.value),
+            mp:App.num(payMP.value),
+            dni:App.num(payDNI.value),
+            card:App.num(payCard.value),
+          }
+        };
+
+        sale.items.forEach(it=>{
+          App.recordStockMove({
+            type:"OUT",
+            productId:it.productId,
+            qty:it.qty,
+            note:"Venta mostrador",
+            refType:"SALE",
+            refId:sale.id
+          });
+        });
+
+        App.addSale(sale);
+
+        cart=[];
         renderCart();
+
+        discountEl.value = 0;
+        payCash.value = 0;
+        payMP.value = 0;
+        payDNI.value = 0;
+        payCard.value = 0;
+
         renderTotals();
-      };
-      cartBody.appendChild(tr);
-    });
-  }
-
-  function renderTotals(){
-    const {subtotal,total}=cartTotals();
-    lblSubtotal.textContent=App.money(subtotal);
-    lblTotal.textContent=App.money(total);
-
-    const paid=App.num(payCash.value)+App.num(payMP.value)+App.num(payDNI.value)+App.num(payCard.value);
-    lblPaid.textContent=App.money(paid);
-    lblChange.textContent=App.money(Math.max(0,paid-total));
-  }
-
-  function addToCart(productId,qty){
-    const p=App.findProductById(productId);
-    if(!p) return;
-
-    const q=App.roundQty(qty);
-    if(q<=0) return;
-
-    if(p.stock<q){
-      App.toast("Stock insuficiente");
-      return;
-    }
-
-    cart.push({productId:p.id,name:p.name,qty:q,price:p.price});
-    renderCart();
-    renderTotals();
-  }
-
-  document.getElementById("btnAddByName").onclick=()=>{
-    const id = selectedProductId || lastResults[0]?.id;
-    if(!id){
-      return App.toast("No hay producto para agregar (buscá y elegí uno)");
-    }
-    addToCart(id, qtyEl.value || 1);
-    qName.focus();
-    qName.select();
-  };
-
-  document.getElementById("btnClear").onclick=()=>{
-    cart=[];
-    renderCart();
-    renderTotals();
-  };
-
-  document.getElementById("btnPay").onclick=()=>{
-    if(!cart.length) return App.toast("Carrito vacío");
-
-    const cash = App.getCash ? App.getCash() : null;
-    if(!cash || !cash.open){
-      return App.toast("Caja cerrada. Abrila en 'Caja diaria'.");
-    }
-
-    const {subtotal,total}=cartTotals();
-
-    const sale={
-      id:App.uid("sale"),
-      createdAt:new Date().toISOString(),
-      items:cart,
-      subtotal,
-      discount:App.num(discountEl.value),
-      total,
-      payments:{
-        cash:App.num(payCash.value),
-        mp:App.num(payMP.value),
-        dni:App.num(payDNI.value),
-        card:App.num(payCard.value),
+        renderCashState();
+        App.toast("Venta registrada");
+      }finally{
+        btnPay.disabled = false;
       }
     };
 
-    sale.items.forEach(it=>{
-      App.recordStockMove({
-        type:"OUT",
-        productId:it.productId,
-        qty:it.qty,
-        note:"Venta mostrador",
-        refType:"SALE",
-        refId:sale.id
-      });
+    function focusScan(){
+      scanInput.value = "";
+      scanInput.focus();
+      App.toast("Listo para escanear (Enter agrega)");
+    }
+    document.getElementById("btnFocusScan").onclick = focusScan;
+
+    scanInput.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        const code = scanInput.value.trim();
+        const p = App.findProductByBarcode(code);
+        if(!p) return App.toast("Código no encontrado");
+        addToCart(p.id, qtyEl.value || 1);
+        focusScan();
+      }
     });
 
-    App.addSale(sale);
+    qName.addEventListener("input", () => {
+      if(looksLikeBarcode(qName.value)) return;
+      updateResults();
+    });
 
-    // suma a caja diaria
-    cash.totals.cash += sale.payments.cash;
-    cash.totals.mp   += sale.payments.mp;
-    cash.totals.dni  += sale.payments.dni;
-    cash.totals.card += sale.payments.card;
-    cash.salesIds.push(sale.id);
-    App.setCash(cash);
+    qName.addEventListener("keydown", (e) => {
+      if(e.key !== "Enter") return;
+      e.preventDefault();
 
-    cart=[];
+      if(tryAddByBarcodeFromQName()) return;
+      document.getElementById("btnAddByName").click();
+    });
+
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "F2"){ e.preventDefault(); focusScan(); }
+      if(e.key === "F9"){ e.preventDefault(); btnPay.click(); }
+    });
+
+    [discountEl,payCash,payMP,payDNI,payCard].forEach(el=>el.addEventListener("input",renderTotals));
+
+    updateResults();
     renderCart();
     renderTotals();
     renderCashState();
-    App.toast("Venta registrada ✅");
-  };
-
-  // scanner
-  function focusScan(){
-    scanInput.value = "";
-    scanInput.focus();
-    App.toast("Listo para escanear (Enter agrega)");
-  }
-  document.getElementById("btnFocusScan").onclick = focusScan;
-  scanInput.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
-      e.preventDefault();
-      const code = scanInput.value.trim();
-      const p = App.findProductByBarcode(code);
-      if(!p) return App.toast("Código no encontrado");
-      addToCart(p.id, qtyEl.value || 1);
-      focusScan();
-    }
-  });
-
-  // init
-  qName.addEventListener("input",updateResults);
-  [discountEl,payCash,payMP,payDNI,payCard].forEach(el=>el.addEventListener("input",renderTotals));
-  updateResults();
-  renderCart();
-  renderTotals();
-  renderCashState();
-</script>
-
+  </script>
 </body>
 </html>

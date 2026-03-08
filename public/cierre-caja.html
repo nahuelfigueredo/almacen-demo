@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Caja diaria</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <!-- Evita warning del favicon (opcional) -->
+  <link rel="icon" href="data:,">
 </head>
 <body>
 
@@ -14,12 +16,14 @@
       <div class="brand__logo">A</div>
       <div>
         <div class="brand__name">Caja diaria</div>
-        <div class="brand__sub">Abrir / Cerrar • Totales por medio de pago</div>
+        <div class="brand__sub">Abrir / Cerrar • Totales • Arqueo</div>
       </div>
     </div>
     <div class="row">
       <a class="btn" href="./index.html">Volver</a>
       <a class="btn btn--primary" href="./caja.html">Ir a Caja</a>
+     <!-- BOTÓN / LINK: Cambiar usuario (PIN) -->
+<a class="btn" href="#" id="btnCambiarUsuario">Cambiar usuario (PIN)</a>
     </div>
   </div>
 </header>
@@ -31,11 +35,11 @@
       <div>
         <h3 style="margin:0 0 6px">Estado</h3>
         <div class="muted" id="lblState">—</div>
+        <div class="muted" id="lblSession">—</div>
       </div>
       <div class="row" style="gap:10px">
-        <button class="btn btn--primary" id="btnOpen">Abrir caja</button>
-        <button class="btn btn--danger" id="btnClose">Cerrar caja</button>
-        <button class="btn" id="btnReset">Reset (solo prueba)</button>
+        <button class="btn btn--primary" id="btnOpen" type="button">Abrir caja</button>
+        <button class="btn btn--danger" id="btnClose" type="button">Cerrar caja</button>
       </div>
     </div>
   </section>
@@ -48,13 +52,13 @@
         <input id="openingAmount" type="number" step="0.01" min="0" value="0" />
       </div>
       <div class="muted" style="flex:1">
-        Se recomienda abrir caja todos los días para que los reportes de caja diaria sean claros.
+        Abrí una caja por turno/día. Los cierres quedan en historial.
       </div>
     </div>
   </section>
 
   <section class="section" style="margin-top:14px">
-    <h3 style="margin:0 0 10px">Totales</h3>
+    <h3 style="margin:0 0 10px">Totales del sistema (sesión actual)</h3>
 
     <div class="section" style="padding:10px">
       <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -69,9 +73,79 @@
         <strong id="tSales">0</strong>
       </div>
     </div>
+  </section>
 
-    <div class="muted" style="margin-top:10px">
-      Nota: los totales se alimentan de las ventas que ya estás guardando en Caja.
+  <section class="section" style="margin-top:14px">
+    <h3 style="margin:0 0 10px">Arqueo (lo que contás en mano)</h3>
+
+    <div class="muted" style="margin-bottom:10px">
+      Ingresá los montos contados. Se guarda en la sesión de caja (historial).
+    </div>
+
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:end">
+      <div style="width:210px">
+        <label for="cCash">Efectivo contado</label>
+        <input id="cCash" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+      </div>
+      <div style="width:210px">
+        <label for="cMP">MP contado</label>
+        <input id="cMP" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+      </div>
+      <div style="width:210px">
+        <label for="cDNI">DNI contado</label>
+        <input id="cDNI" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+      </div>
+      <div style="width:210px">
+        <label for="cCard">Tarjeta contado</label>
+        <input id="cCard" type="number" step="0.01" min="0" value="0" inputmode="decimal" />
+      </div>
+
+      <button class="btn" id="btnSaveCount" type="button">Guardar arqueo</button>
+    </div>
+
+    <div class="section" style="padding:10px;margin-top:12px">
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="muted">Total contado</div>
+          <div><strong id="lblCountedTotal">$0</strong></div>
+        </div>
+        <div>
+          <div class="muted">Total sistema</div>
+          <div><strong id="lblSystemTotal">$0</strong></div>
+        </div>
+        <div>
+          <div class="muted">Diferencia (contado - sistema)</div>
+          <div><strong id="lblDiff">$0</strong></div>
+        </div>
+      </div>
+
+      <div class="muted" style="margin-top:8px" id="lblCountedMeta">—</div>
+    </div>
+  </section>
+
+  <section class="section" style="margin-top:14px">
+    <div class="row" style="justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px">
+      <div>
+        <h3 style="margin:0 0 6px">Historial</h3>
+        <div class="muted">Últimas 15 sesiones de caja.</div>
+      </div>
+    </div>
+
+    <div style="overflow:auto;margin-top:12px">
+      <table class="table" id="tblSessions">
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Apertura</th>
+            <th>Cierre</th>
+            <th>Inicial</th>
+            <th>Ventas</th>
+            <th>Totales</th>
+            <th>Arqueo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 
@@ -79,125 +153,293 @@
 
 <script src="./js/app.js"></script>
 <script>
-  App.guardPage(App.PERMS.seller_admin_owner);
+  // Boot seguro: espera a que App exista antes de ejecutar el resto
+  (function boot(){
+    if(!window.App) return setTimeout(boot, 20);
 
-  // ✅ Si estás usando login/roles:
-  // App.guardPage(App.PERMS.cashier_or_admin);
+    App.guardPage(App.PERMS.seller_admin_owner);
 
-  // ====== FALLBACK caja en localStorage (si App.getCash no existe o está incompleto) ======
-  const CASH_KEY = "almacen_cash_v1";
+    const lblState = document.getElementById("lblState");
+    const lblSession = document.getElementById("lblSession");
+    const openingAmount = document.getElementById("openingAmount");
 
-  function cashDefault(){
-    return {
-      open: false,
-      openedAt: null,
-      closedAt: null,
-      openingAmount: 0,
-      totals: { cash:0, mp:0, dni:0, card:0 },
-      salesIds: []
-    };
-  }
+    const tCash = document.getElementById("tCash");
+    const tMP = document.getElementById("tMP");
+    const tDNI = document.getElementById("tDNI");
+    const tCard = document.getElementById("tCard");
+    const tSales = document.getElementById("tSales");
 
-  function getCashSafe(){
-    if (window.App?.getCash) return App.getCash();
+    const cCash = document.getElementById("cCash");
+    const cMP = document.getElementById("cMP");
+    const cDNI = document.getElementById("cDNI");
+    const cCard = document.getElementById("cCard");
 
-    const raw = localStorage.getItem(CASH_KEY);
-    if(!raw){
-      const d = cashDefault();
-      localStorage.setItem(CASH_KEY, JSON.stringify(d));
-      return d;
-    }
-    try { return JSON.parse(raw); }
-    catch {
-      const d = cashDefault();
-      localStorage.setItem(CASH_KEY, JSON.stringify(d));
-      return d;
-    }
-  }
+    const btnSaveCount = document.getElementById("btnSaveCount");
+    const btnOpen = document.getElementById("btnOpen");
+    const btnClose = document.getElementById("btnClose");
+    const btnCambiarUsuario = document.getElementById("btnCambiarUsuario");
 
-  function setCashSafe(cash){
-    if (window.App?.setCash) return App.setCash(cash);
-    localStorage.setItem(CASH_KEY, JSON.stringify(cash));
-  }
+    const lblCountedTotal = document.getElementById("lblCountedTotal");
+    const lblSystemTotal = document.getElementById("lblSystemTotal");
+    const lblDiff = document.getElementById("lblDiff");
+    const lblCountedMeta = document.getElementById("lblCountedMeta");
 
-  function money(n){
-    const v = Number(n || 0);
-    return v.toLocaleString("es-AR", { style:"currency", currency:"ARS", minimumFractionDigits:2 });
-  }
+    const tbodySessions = document.querySelector("#tblSessions tbody");
 
-  // ====== UI ======
-  const lblState = document.getElementById("lblState");
-  const openingAmount = document.getElementById("openingAmount");
-  const tCash = document.getElementById("tCash");
-  const tMP = document.getElementById("tMP");
-  const tDNI = document.getElementById("tDNI");
-  const tCard = document.getElementById("tCard");
-  const tSales = document.getElementById("tSales");
-
-  function render(){
-    const cash = getCashSafe();
-
-    lblState.textContent = cash.open
-      ? `ABIERTA • ${new Date(cash.openedAt).toLocaleString("es-AR")} • Inicial: ${money(cash.openingAmount)}`
-      : `CERRADA ${cash.closedAt ? "• " + new Date(cash.closedAt).toLocaleString("es-AR") : ""}`;
-
-    openingAmount.value = Number(cash.openingAmount || 0);
-
-    tCash.textContent = money(cash.totals?.cash || 0);
-    tMP.textContent   = money(cash.totals?.mp || 0);
-    tDNI.textContent  = money(cash.totals?.dni || 0);
-    tCard.textContent = money(cash.totals?.card || 0);
-    tSales.textContent = String((cash.salesIds || []).length);
-  }
-
-  function openCash(){
-    const cash = getCashSafe();
-    if(cash.open){
-      App?.toast?.("La caja ya está abierta");
-      return;
+    function systemTotals(cur){
+      const totals = (cur && cur.totals) ? cur.totals : {};
+      return {
+        cash: App.num(totals.cash),
+        mp: App.num(totals.mp),
+        dni: App.num(totals.dni),
+        card: App.num(totals.card)
+      };
     }
 
-    const initial = Number(openingAmount.value || 0);
-    if(initial < 0){
-      App?.toast?.("Monto inicial inválido");
-      return;
+    function sumPay(p){
+      return App.num(p.cash) + App.num(p.mp) + App.num(p.dni) + App.num(p.card);
     }
 
-    const next = cashDefault();
-    next.open = true;
-    next.openedAt = new Date().toISOString();
-    next.openingAmount = initial;
+    function countedTotals(){
+      return {
+        cash: App.num(cCash.value),
+        mp: App.num(cMP.value),
+        dni: App.num(cDNI.value),
+        card: App.num(cCard.value)
+      };
+    }
 
-    // mantiene ventas/totales en 0 al abrir una nueva caja diaria
-    setCashSafe(next);
-    App?.toast?.("Caja abierta ✅");
+    function updateDiffUI(){
+      const cur = App.getCurrentCashSession();
+      const sys = systemTotals(cur);
+      const cnt = countedTotals();
+
+      const sysTotal = sumPay(sys);
+      const cntTotal = sumPay(cnt);
+      const diff = cntTotal - sysTotal;
+
+      lblSystemTotal.textContent = App.money(sysTotal);
+      lblCountedTotal.textContent = App.money(cntTotal);
+      lblDiff.textContent = App.money(diff);
+
+      lblDiff.style.color = Math.abs(diff) < 0.01 ? "" : (diff < 0 ? "#e74c3c" : "#2ecc71");
+    }
+
+    function roleLabel(role){
+      if(role === "owner") return "Dueño";
+      if(role === "admin") return "Admin";
+      if(role === "seller") return "Vendedor";
+      return role;
+    }
+
+    function render(){
+      const cur = App.getCurrentCashSession();
+      const st = App.getCashState();
+
+      if(cur){
+        lblState.textContent = cur.open
+          ? `ABIERTA • ${new Date(cur.openedAt).toLocaleString("es-AR")} • Inicial: ${App.money(cur.openingAmount)}`
+          : `CERRADA • ${cur.closedAt ? new Date(cur.closedAt).toLocaleString("es-AR") : "-"}`;
+
+        const sessions = (st.sessions || []);
+const idx = sessions.findIndex(s => s.id === cur.id);
+const n = (idx >= 0) ? (sessions.length - idx) : sessions.length; // más reciente = número más alto
+lblSession.textContent = `Sesión: #${n}`;
+        openingAmount.value = Number(cur.openingAmount || 0);
+
+        tCash.textContent = App.money(cur.totals ? cur.totals.cash : 0);
+        tMP.textContent   = App.money(cur.totals ? cur.totals.mp : 0);
+        tDNI.textContent  = App.money(cur.totals ? cur.totals.dni : 0);
+        tCard.textContent = App.money(cur.totals ? cur.totals.card : 0);
+        tSales.textContent = String((cur.salesIds || []).length);
+
+        btnOpen.disabled = !!cur.open;
+        btnClose.disabled = !cur.open;
+
+        const counted = cur.counted || null;
+        if(counted){
+          cCash.value = App.num(counted.cash);
+          cMP.value = App.num(counted.mp);
+          cDNI.value = App.num(counted.dni);
+          cCard.value = App.num(counted.card);
+
+          const who = counted.byName ? `${counted.byName} (${roleLabel(counted.byRole)})` : "—";
+          lblCountedMeta.textContent = `Arqueo guardado: ${new Date(counted.at).toLocaleString("es-AR")} • Por: ${who}`;
+        }else{
+          lblCountedMeta.textContent = "Sin arqueo guardado en esta sesión.";
+        }
+
+        btnSaveCount.disabled = !cur.open;
+        updateDiffUI();
+      }else{
+        lblState.textContent = "Sin sesión actual. Abrí caja para empezar.";
+        lblSession.textContent = "—";
+        openingAmount.value = 0;
+
+        tCash.textContent = App.money(0);
+        tMP.textContent   = App.money(0);
+        tDNI.textContent  = App.money(0);
+        tCard.textContent = App.money(0);
+        tSales.textContent = "0";
+
+        btnSaveCount.disabled = true;
+        lblSystemTotal.textContent = App.money(0);
+        lblCountedTotal.textContent = App.money(0);
+        lblDiff.textContent = App.money(0);
+        lblCountedMeta.textContent = "—";
+
+        btnOpen.disabled = false;
+        btnClose.disabled = true;
+      }
+
+      const sessions = (st.sessions || []).slice(0, 15);
+      tbodySessions.innerHTML = "";
+      sessions.forEach(s=>{
+        const total = sumPay(systemTotals(s));
+        const counted = s.counted ? sumPay(s.counted) : null;
+        const diff = (counted == null) ? null : (counted - total);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${s.open ? "ABIERTA" : "CERRADA"}</strong></td>
+          <td><small>${s.openedAt ? new Date(s.openedAt).toLocaleString("es-AR") : "-"}</small></td>
+          <td><small>${s.closedAt ? new Date(s.closedAt).toLocaleString("es-AR") : "-"}</small></td>
+          <td>${App.money(s.openingAmount)}</td>
+          <td>${(s.salesIds || []).length}</td>
+          <td><strong>${App.money(total)}</strong></td>
+          <td>
+            ${
+              s.counted
+                ? `<small>Contado: <strong>${App.money(counted)}</strong><br/>Dif: <strong style="color:${Math.abs(diff) < 0.01 ? "" : (diff < 0 ? "#e74c3c" : "#2ecc71")}">${App.money(diff)}</strong></small>`
+                : `<span class="muted">—</span>`
+            }
+          </td>
+        `;
+        tbodySessions.appendChild(tr);
+      });
+
+      if(!sessions.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="7" class="muted" style="padding:14px 8px">Sin sesiones todavía.</td>`;
+        tbodySessions.appendChild(tr);
+      }
+    }
+
+    function doOpenCash(){
+      const initial = Number(openingAmount.value || 0);
+      if(initial < 0) return App.toast("Monto inicial inválido");
+      try{
+        App.openCash(initial);
+        App.toast("Caja abierta ✅");
+        render();
+      }catch(err){
+        App.toast(err && err.message ? err.message : "Error");
+      }
+    }
+
+    function doSaveCounted(){
+      const cur = App.getCurrentCashSession();
+      if(!cur || !cur.open) return App.toast("Abrí la caja para guardar arqueo");
+
+      const st = App.getCashState();
+      const session = (st.sessions || []).find(x => x.id === cur.id);
+      if(!session) return App.toast("Sesión no encontrada");
+
+      const me = App.getMe();
+      const counted = countedTotals();
+
+      // SIN spread para máxima compatibilidad
+      session.counted = Object.assign({}, counted, {
+        at: new Date().toISOString(),
+        byName: me && me.name ? me.name : "",
+        byRole: me && me.role ? me.role : ""
+      });
+
+      App.setCashState(st);
+      App.toast("Arqueo guardado ✅");
+      render();
+    }
+
+    function doCloseCash(){
+      const cur = App.getCurrentCashSession();
+      if(!cur || !cur.open) return App.toast("La caja ya está cerrada");
+
+      const sysTotal = sumPay(systemTotals(cur));
+      const counted = cur.counted ? sumPay(cur.counted) : null;
+      const diff = (counted == null) ? null : (counted - sysTotal);
+
+      const TH = 500;
+
+      if(diff != null && Math.abs(diff) >= TH){
+        const ok = confirm(`ATENCIÓN: hay diferencia de ${App.money(diff)}.\n\n¿Querés cerrar igual?`);
+        if(!ok) return;
+      }else if(diff == null){
+        const ok = confirm("No hay arqueo guardado. ¿Cerrar caja igual?");
+        if(!ok) return;
+      }
+
+      try{
+        App.closeCash();
+        App.toast("Caja cerrada ✅");
+        render();
+      }catch(err){
+        App.toast(err && err.message ? err.message : "Error");
+      }
+    }
+
+    btnOpen.addEventListener("click", doOpenCash);
+    btnClose.addEventListener("click", doCloseCash);
+    btnSaveCount.addEventListener("click", doSaveCounted);
+    [cCash,cMP,cDNI,cCard].forEach(el => el.addEventListener("input", updateDiffUI));
+
+    btnCambiarUsuario.addEventListener("click", (e) => {
+      e.preventDefault();
+      if(!confirm("¿Cambiar de usuario (volver a PIN)?")) return;
+
+      App.logout();
+      const next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+      location.href = `./login.html?next=${next}`;
+    });
+
     render();
-  }
+  })();
 
-  function closeCash(){
-    const cash = getCashSafe();
-    if(!cash.open){
-      App?.toast?.("La caja ya está cerrada");
-      return;
+  
+  (function wirePinButton(){
+    function bind(){
+      var el = document.getElementById("btnCambiarUsuario");
+      if(!el) return;
+
+      // evitar doble bind si se pega 2 veces
+      if(el.__boundPinBtn) return;
+      el.__boundPinBtn = true;
+
+      el.addEventListener("click", function(e){
+        e.preventDefault();
+
+        if(!confirm("¿Cambiar de usuario (volver a PIN)?")) return;
+
+        try{
+          if(window.App && typeof App.logout === "function"){
+            App.logout();
+          }else{
+            localStorage.removeItem("almacen_session_v1");
+          }
+        }catch(_e){}
+
+        var next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+        location.href = "./login.html?next=" + next;
+      });
     }
-    cash.open = false;
-    cash.closedAt = new Date().toISOString();
-    setCashSafe(cash);
-    App?.toast?.("Caja cerrada ✅");
-    render();
-  }
 
-  function resetCash(){
-    setCashSafe(cashDefault());
-    App?.toast?.("Caja reseteada (prueba) ✅");
-    render();
-  }
+    // por si el script corre antes que el DOM
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", bind);
+    }else{
+      bind();
+    }
+  })();
 
-  document.getElementById("btnOpen").addEventListener("click", openCash);
-  document.getElementById("btnClose").addEventListener("click", closeCash);
-  document.getElementById("btnReset").addEventListener("click", resetCash);
-
-  render();
 </script>
 
 </body>

@@ -1,0 +1,59 @@
+/* Dashboard additions (optional).
+   If you don't want a new file, copy/paste into public/css/styles.css.
+*/
+
+/* Slightly nicer spacing for dashboard tables/sections */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap:12px;
+}
+@media (max-width: 900px){
+  .kpi-grid{ grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+}
+
+/* Small status pill */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  border:1px solid rgba(255,255,255,.12);
+}
+.badge--ok{
+  background: rgba(46, 204, 113, .14);
+  color: #2ecc71;
+  border-color: rgba(46, 204, 113, .30);
+}
+.badge--warn{
+  background: rgba(241, 196, 15, .14);
+  color: #f1c40f;
+  border-color: rgba(241, 196, 15, .30);
+}
+.badge--danger{
+  background: rgba(231, 76, 60, .14);
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, .30);
+}
+
+/* Table wrapper nice scroll */
+.table-wrap{
+  overflow:auto;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+/* Optional: make dashboard "totals" row more compact */
+.dashboard-totals{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  justify-content:space-between;
+}
+.dashboard-totals > div{
+  min-width:140px;
+}

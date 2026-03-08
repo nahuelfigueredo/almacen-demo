@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  
+  <defs>
+    <linearGradient id="mcnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7CE8FF"/>
+      <stop offset="50%" stop-color="#2BB3F3"/>
+      <stop offset="100%" stop-color="#0A66C2"/>
+    </linearGradient>
+    
+    <linearGradient id="swooshGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7CE8FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0A66C2" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Swoosh -->
+  <path d="M60 320 C150 420, 360 420, 450 260 
+           C380 340, 180 340, 80 260 Z"
+        fill="url(#swooshGradient)" opacity="0.8"/>
+
+  <!-- MCN Text -->
+  <text x="256" y="240" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="140"
+        font-weight="bold"
+        fill="url(#mcnGradient)">
+        MCN
+  </text>
+
+  <!-- Digital Studio -->
+  <text x="256" y="310" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="48"
+        font-weight="600"
+        fill="#0A66C2">
+        digital studio
+  </text>
+
+  <!-- Gear icon -->
+  <g transform="translate(400,120) scale(0.6)">
+    <circle cx="0" cy="0" r="40" fill="url(#mcnGradient)"/>
+    <circle cx="0" cy="0" r="18" fill="white"/>
+  </g>
+
+</svg>

@@ -4,340 +4,470 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reportes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/styles.css">
 </head>
+
 <body>
-<header class="top">
-  <div class="wrap top__inner">
-    <div class="brand">
-      <div class="brand__logo">A</div>
-      <div>
-        <div class="brand__name">Reportes</div>
-        <div class="brand__sub">Día / Mes • pagos • export CSV</div>
-      </div>
-    </div>
-    <div class="row">
-      <a class="btn" href="./index.html">Volver</a>
-      <button class="btn btn--primary" id="btnExport">Exportar CSV</button>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="section">
-    <div class="row" style="justify-content:space-between;align-items:end">
-      <div>
-        <h3 style="margin:0 0 6px">Filtro</h3>
-        <div class="muted">Elegí día o mes. Los totales se recalculan.</div>
-      </div>
-      <div class="row" style="gap:10px">
-        <div style="width:180px">
-          <label>Modo</label>
-          <select id="mode">
-            <option value="DAY">Día</option>
-            <option value="MONTH">Mes</option>
-          </select>
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M4 19V5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4 19h16" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M8 16v-5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 16V7" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M16 16v-3" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
         </div>
-        <div style="width:200px">
-          <label id="lblDate">Fecha</label>
-          <input id="date" type="date" />
+        <div>
+          <div class="brand__name">Reportes</div>
+          <div class="brand__sub">Día / Mes • pagos • export CSV • anulación</div>
         </div>
-        <div style="width:200px; display:none" id="monthBox">
-          <label>Mes</label>
-          <input id="month" type="month" />
+      </div>
+
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
+        <button class="btn btn--primary" id="btnExport" type="button">Exportar CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="section">
+      <div class="section__head">
+        <div>
+          <h3 class="section__title">Filtro</h3>
+          <div class="muted">Elegí día o mes. Los totales se recalculan.</div>
         </div>
-        <button class="btn" id="btnRefresh" style="align-self:end">Actualizar</button>
+
+        <div class="report-filters">
+          <div class="report-filters__field">
+            <label for="mode">Modo</label>
+            <select id="mode">
+              <option value="DAY">Día</option>
+              <option value="MONTH">Mes</option>
+            </select>
+          </div>
+
+          <div class="report-filters__field" id="dayBox">
+            <label id="lblDate" for="date">Fecha</label>
+            <input id="date" type="date" />
+          </div>
+
+          <div class="report-filters__field" id="monthBox" style="display:none">
+            <label for="month">Mes</label>
+            <input id="month" type="month" />
+          </div>
+
+          <button class="btn" id="btnRefresh" type="button">Actualizar</button>
+        </div>
       </div>
-    </div>
 
-    <div class="section" style="padding:10px;margin-top:12px">
-      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div><span class="muted">Ventas</span><div><strong id="kSales">0</strong></div></div>
-        <div><span class="muted">Total</span><div><strong id="kTotal">$0</strong></div></div>
-        <div><span class="muted">Ticket prom.</span><div><strong id="kAvg">$0</strong></div></div>
-        <div><span class="muted">Efectivo</span><div><strong id="kCash">$0</strong></div></div>
-        <div><span class="muted">MP</span><div><strong id="kMP">$0</strong></div></div>
-        <div><span class="muted">DNI</span><div><strong id="kDNI">$0</strong></div></div>
-        <div><span class="muted">Tarjeta</span><div><strong id="kCard">$0</strong></div></div>
+      <div class="kpi-grid mt-12">
+        <div class="kpi">
+          <div class="kpi__label">Ventas</div>
+          <div class="kpi__value" id="kSales">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Total</div>
+          <div class="kpi__value" id="kTotal">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Ticket prom.</div>
+          <div class="kpi__value" id="kAvg">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Efectivo</div>
+          <div class="kpi__value" id="kCash">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">MP</div>
+          <div class="kpi__value" id="kMP">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">DNI</div>
+          <div class="kpi__value" id="kDNI">$0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Tarjeta</div>
+          <div class="kpi__value" id="kCard">$0</div>
+        </div>
       </div>
-    </div>
-  </section>
 
-  <section class="section" style="margin-top:14px">
-    <div class="row" style="justify-content:space-between;align-items:end">
-      <div>
-        <h3 style="margin:0 0 6px">Ventas</h3>
-        <div class="muted">Últimas 200 del filtro.</div>
+      <div class="muted mt-12" id="voidPermHint">—</div>
+    </section>
+
+    <section class="section mt-14">
+      <div class="section__head">
+        <div>
+          <h3 class="section__title">Ventas</h3>
+          <div class="muted">Últimas 200 del filtro.</div>
+        </div>
+
+        <div class="report-search">
+          <label for="q">Buscar (producto o ID)</label>
+          <input id="q" placeholder="Ej: azúcar, sale_..." />
+        </div>
       </div>
-      <div style="width:320px">
-        <label>Buscar (producto o ID)</label>
-        <input id="q" placeholder="Ej: azúcar, sale_..." />
+
+      <div class="table-wrap mt-12">
+        <table class="table" id="tblSales">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>ID</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Pagos</th>
+              <th style="width:160px"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-    </div>
+    </section>
 
-    <div style="overflow:auto;margin-top:12px">
-      <table class="table" id="tblSales">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>ID</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Pagos</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+    <section class="section mt-14">
+      <div class="section__head">
+        <div>
+          <h3 class="section__title">Top productos</h3>
+          <div class="muted">Por cantidad vendida. No incluye ventas anuladas.</div>
+        </div>
+      </div>
 
-  <section class="section" style="margin-top:14px">
-    <h3 style="margin:0 0 6px">Top productos</h3>
-    <div class="muted">Por cantidad vendida (decimales incluidos).</div>
+      <div class="table-wrap mt-12">
+        <table class="table" id="tblTop">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>$ Vendido</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-    <div style="overflow:auto;margin-top:12px">
-      <table class="table" id="tblTop">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>$ Vendido</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-</main>
+  <script src="./js/app.js"></script>
+  <script>
+    // puede ver reportes seller/admin/owner, pero anular solo admin/owner
+    App.guardPage(App.PERMS.seller_admin_owner);
+    window.App.ensureSeed();
 
-<script src="./js/app.js"></script>
-<script>
-    App.guardPage(App.PERMS.admin_or_owner);
+    const me = App.getMe();
+    const canVoid = ["admin","owner"].includes(me?.role);
 
+    const voidPermHint = document.getElementById("voidPermHint");
+    voidPermHint.textContent = canVoid
+      ? "Podés anular ventas (admin/owner)."
+      : "Solo admin/owner pueden anular ventas. Estás en modo solo lectura.";
 
-  window.App.ensureSeed();
+    const modeEl = document.getElementById("mode");
+    const dateEl = document.getElementById("date");
+    const monthEl = document.getElementById("month");
+    const monthBox = document.getElementById("monthBox");
+    const dayBox = document.getElementById("dayBox");
+    const btnRefresh = document.getElementById("btnRefresh");
+    const btnExport = document.getElementById("btnExport");
+    const qEl = document.getElementById("q");
 
-  const modeEl = document.getElementById("mode");
-  const dateEl = document.getElementById("date");
-  const monthEl = document.getElementById("month");
-  const monthBox = document.getElementById("monthBox");
-  const btnRefresh = document.getElementById("btnRefresh");
-  const btnExport = document.getElementById("btnExport");
-  const qEl = document.getElementById("q");
+    const kSales = document.getElementById("kSales");
+    const kTotal = document.getElementById("kTotal");
+    const kAvg = document.getElementById("kAvg");
+    const kCash = document.getElementById("kCash");
+    const kMP = document.getElementById("kMP");
+    const kDNI = document.getElementById("kDNI");
+    const kCard = document.getElementById("kCard");
 
-  const kSales = document.getElementById("kSales");
-  const kTotal = document.getElementById("kTotal");
-  const kAvg = document.getElementById("kAvg");
-  const kCash = document.getElementById("kCash");
-  const kMP = document.getElementById("kMP");
-  const kDNI = document.getElementById("kDNI");
-  const kCard = document.getElementById("kCard");
+    const tbodySales = document.querySelector("#tblSales tbody");
+    const tbodyTop = document.querySelector("#tblTop tbody");
 
-  const tbodySales = document.querySelector("#tblSales tbody");
-  const tbodyTop = document.querySelector("#tblTop tbody");
-
-  function ymd(d){
-    const dt = new Date(d);
-    const y = dt.getFullYear();
-    const m = String(dt.getMonth()+1).padStart(2,"0");
-    const da = String(dt.getDate()).padStart(2,"0");
-    return `${y}-${m}-${da}`;
-  }
-  function ym(d){
-    const dt = new Date(d);
-    const y = dt.getFullYear();
-    const m = String(dt.getMonth()+1).padStart(2,"0");
-    return `${y}-${m}`;
-  }
-
-  function getFilteredSales(){
-    const sales = App.getSales();
-    const mode = modeEl.value;
-
-    if(mode === "DAY"){
-      const day = dateEl.value || ymd(new Date());
-      return sales.filter(s => ymd(s.createdAt) === day);
-    }else{
-      const m = monthEl.value || ym(new Date());
-      return sales.filter(s => ym(s.createdAt) === m);
+    function ymd(d){
+      const dt = new Date(d);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth()+1).padStart(2,"0");
+      const da = String(dt.getDate()).padStart(2,"0");
+      return `${y}-${m}-${da}`;
     }
-  }
+    function ym(d){
+      const dt = new Date(d);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth()+1).padStart(2,"0");
+      return `${y}-${m}`;
+    }
 
-  function sumPayments(list){
-    return list.reduce((acc, s)=>{
-      const p = s.payments || {};
-      acc.cash += App.num(p.cash);
-      acc.mp   += App.num(p.mp);
-      acc.dni  += App.num(p.dni);
-      acc.card += App.num(p.card);
-      return acc;
-    }, {cash:0, mp:0, dni:0, card:0});
-  }
+    function getFilteredSales(){
+      const sales = App.getSales();
+      const mode = modeEl.value;
 
-  function renderKPIs(list){
-    const total = list.reduce((a,s)=>a+App.num(s.total),0);
-    const avg = list.length ? total / list.length : 0;
-    const pay = sumPayments(list);
+      const base = sales.filter(s => !s.voided);
 
-    kSales.textContent = String(list.length);
-    kTotal.textContent = App.money(total);
-    kAvg.textContent = App.money(avg);
-    kCash.textContent = App.money(pay.cash);
-    kMP.textContent = App.money(pay.mp);
-    kDNI.textContent = App.money(pay.dni);
-    kCard.textContent = App.money(pay.card);
-  }
+      if(mode === "DAY"){
+        const day = dateEl.value || ymd(new Date());
+        return base.filter(s => ymd(s.createdAt) === day);
+      }else{
+        const m = monthEl.value || ym(new Date());
+        return base.filter(s => ym(s.createdAt) === m);
+      }
+    }
 
-  function renderSalesTable(list){
-    const q = qEl.value.trim().toLowerCase();
-    let filtered = list;
+    function getFilteredSalesIncludingVoided(){
+      const sales = App.getSales();
+      const mode = modeEl.value;
 
-    if(q){
-      filtered = list.filter(s=>{
-        const id = (s.id||"").toLowerCase();
-        const items = (s.items||[]).map(i=> (i.name||"").toLowerCase()).join(" ");
-        return id.includes(q) || items.includes(q);
+      if(mode === "DAY"){
+        const day = dateEl.value || ymd(new Date());
+        return sales.filter(s => ymd(s.createdAt) === day);
+      }else{
+        const m = monthEl.value || ym(new Date());
+        return sales.filter(s => ym(s.createdAt) === m);
+      }
+    }
+
+    function sumPayments(list){
+      return list.reduce((acc, s)=>{
+        const p = s.payments || {};
+        acc.cash += App.num(p.cash);
+        acc.mp   += App.num(p.mp);
+        acc.dni  += App.num(p.dni);
+        acc.card += App.num(p.card);
+        return acc;
+      }, {cash:0, mp:0, dni:0, card:0});
+    }
+
+    function renderKPIs(list){
+      const total = list.reduce((a,s)=>a+App.num(s.total),0);
+      const avg = list.length ? total / list.length : 0;
+      const pay = sumPayments(list);
+
+      kSales.textContent = String(list.length);
+      kTotal.textContent = App.money(total);
+      kAvg.textContent = App.money(avg);
+      kCash.textContent = App.money(pay.cash);
+      kMP.textContent = App.money(pay.mp);
+      kDNI.textContent = App.money(pay.dni);
+      kCard.textContent = App.money(pay.card);
+    }
+
+    function renderSalesTable(listIncludingVoided){
+      const q = qEl.value.trim().toLowerCase();
+      let filtered = listIncludingVoided;
+
+      if(q){
+        filtered = listIncludingVoided.filter(s=>{
+          const id = (s.id||"").toLowerCase();
+          const items = (s.items||[]).map(i=> (i.name||"").toLowerCase()).join(" ");
+          return id.includes(q) || items.includes(q);
+        });
+      }
+
+      tbodySales.innerHTML = "";
+      filtered.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt)).slice(0,200).forEach(s=>{
+        const itemsCount = (s.items||[]).length;
+        const pays = s.payments || {};
+        const payTxt = `Ef ${App.money(pays.cash)} • MP ${App.money(pays.mp)} • DNI ${App.money(pays.dni)} • T ${App.money(pays.card)}`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><small>${new Date(s.createdAt).toLocaleString("es-AR")}${s.voided ? `<br/><span class="muted">ANULADA</span>` : ""}</small></td>
+          <td><small>${s.id}</small></td>
+          <td>${itemsCount}</td>
+          <td><strong>${App.money(s.total)}</strong></td>
+          <td><small>${payTxt}</small></td>
+          <td class="cell-actions"></td>
+        `;
+
+        const actionsCell = tr.querySelector(".cell-actions");
+
+        if(s.voided){
+          const badge = document.createElement("span");
+          badge.className = "badge badge--warn";
+          badge.textContent = "Anulada";
+          actionsCell.appendChild(badge);
+        }else if(canVoid){
+          const btn = document.createElement("button");
+          btn.className = "btn btn--danger";
+          btn.type = "button";
+          btn.textContent = "Anular";
+          btn.onclick = () => voidSaleFromUI(s.id);
+          actionsCell.appendChild(btn);
+        }else{
+          const empty = document.createElement("span");
+          empty.className = "muted";
+          empty.textContent = "—";
+          actionsCell.appendChild(empty);
+        }
+
+        tbodySales.appendChild(tr);
       });
+
+      if(!filtered.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" class="muted" style="padding:14px 8px">Sin ventas en el filtro.</td>`;
+        tbodySales.appendChild(tr);
+      }
     }
 
-    tbodySales.innerHTML = "";
-    filtered.slice(0,200).forEach(s=>{
-      const itemsCount = (s.items||[]).length;
-      const pays = s.payments || {};
-      const payTxt = `Ef ${App.money(pays.cash)} • MP ${App.money(pays.mp)} • DNI ${App.money(pays.dni)} • T ${App.money(pays.card)}`;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><small>${new Date(s.createdAt).toLocaleString("es-AR")}</small></td>
-        <td><small>${s.id}</small></td>
-        <td>${itemsCount}</td>
-        <td><strong>${App.money(s.total)}</strong></td>
-        <td><small>${payTxt}</small></td>
-      `;
-      tbodySales.appendChild(tr);
-    });
-
-    if(!filtered.length){
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="5" class="muted" style="padding:14px 8px">Sin ventas en el filtro.</td>`;
-      tbodySales.appendChild(tr);
-    }
-  }
-
-  function renderTopProducts(list){
-    const map = new Map(); // name -> {qty, amount}
-    list.forEach(s=>{
-      (s.items||[]).forEach(it=>{
-        const name = it.name || "Sin nombre";
-        const qty = App.num(it.qty);
-        const amount = App.num(it.subtotal ?? (qty * App.num(it.unitPrice)));
-        const cur = map.get(name) || {qty:0, amount:0};
-        cur.qty += qty;
-        cur.amount += amount;
-        map.set(name, cur);
+    function renderTopProducts(list){
+      const map = new Map();
+      list.forEach(s=>{
+        (s.items||[]).forEach(it=>{
+          const name = it.name || "Sin nombre";
+          const qty = App.num(it.qty);
+          const amount = App.num(qty * App.num(it.price));
+          const cur = map.get(name) || {qty:0, amount:0};
+          cur.qty += qty;
+          cur.amount += amount;
+          map.set(name, cur);
+        });
       });
-    });
 
-    const arr = Array.from(map.entries())
-      .map(([name,v])=>({name, qty:v.qty, amount:v.amount}))
-      .sort((a,b)=> b.qty - a.qty);
+      const arr = Array.from(map.entries())
+        .map(([name,v])=>({name, qty:v.qty, amount:v.amount}))
+        .sort((a,b)=> b.qty - a.qty);
 
-    tbodyTop.innerHTML = "";
-    arr.slice(0,50).forEach(r=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${r.name}</strong></td>
-        <td>${App.roundQty(r.qty)}</td>
-        <td>${App.money(r.amount)}</td>
-      `;
-      tbodyTop.appendChild(tr);
-    });
-
-    if(!arr.length){
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="3" class="muted" style="padding:14px 8px">Sin datos.</td>`;
-      tbodyTop.appendChild(tr);
-    }
-  }
-
-  function csvEscape(v){
-    const s = String(v ?? "");
-    if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-    return s;
-  }
-
-  function exportCSV(list){
-    // 1 fila por item (más útil para Excel)
-    const rows = [];
-    rows.push([
-      "Fecha","VentaID","Producto","Cantidad","PrecioUnit","SubtotalItem","DescuentoVenta","TotalVenta",
-      "PagoEfectivo","PagoMP","PagoDNI","PagoTarjeta"
-    ]);
-
-    list.forEach(s=>{
-      const p = s.payments || {};
-      const dt = new Date(s.createdAt).toLocaleString("es-AR");
-      (s.items||[]).forEach(it=>{
-        rows.push([
-          dt,
-          s.id,
-          it.name,
-          App.roundQty(it.qty),
-          App.num(it.unitPrice),
-          App.num(it.subtotal ?? (App.num(it.qty)*App.num(it.unitPrice))),
-          App.num(s.discount),
-          App.num(s.total),
-          App.num(p.cash),
-          App.num(p.mp),
-          App.num(p.dni),
-          App.num(p.card)
-        ]);
+      tbodyTop.innerHTML = "";
+      arr.slice(0,50).forEach(r=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${r.name}</strong></td>
+          <td>${App.roundQty(r.qty)}</td>
+          <td>${App.money(r.amount)}</td>
+        `;
+        tbodyTop.appendChild(tr);
       });
-    });
 
-    const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    const mode = modeEl.value === "DAY" ? (dateEl.value || ymd(new Date())) : (monthEl.value || ym(new Date()));
-    a.href = url;
-    a.download = `reporte_${modeEl.value.toLowerCase()}_${mode}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function refresh(){
-    const list = getFilteredSales().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
-    renderKPIs(list);
-    renderSalesTable(list);
-    renderTopProducts(list);
-    return list;
-  }
-
-  function toggleMode(){
-    if(modeEl.value === "DAY"){
-      monthBox.style.display = "none";
-      dateEl.style.display = "";
-    }else{
-      monthBox.style.display = "";
-      dateEl.style.display = "none";
+      if(!arr.length){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="3" class="muted" style="padding:14px 8px">Sin datos.</td>`;
+        tbodyTop.appendChild(tr);
+      }
     }
-  }
 
-  // init defaults
-  dateEl.value = ymd(new Date());
-  monthEl.value = ym(new Date());
+    async function voidSaleFromUI(saleId){
+      if(!canVoid) return App.toast("Sin permiso para anular");
 
-  modeEl.addEventListener("change", ()=>{ toggleMode(); refresh(); });
-  btnRefresh.addEventListener("click", refresh);
-  qEl.addEventListener("input", refresh);
-  btnExport.addEventListener("click", ()=> exportCSV(refresh()));
+      const sale = App.findSaleById(saleId);
+      if(!sale) return App.toast("Venta no encontrada");
 
-  toggleMode();
-  refresh();
-</script>
+      const reason = prompt("Motivo de anulación (ej: error de cobro, devolución):", "Error de cobro");
+      if(reason === null) return;
+
+      const note = prompt("Nota (opcional):", "");
+      if(note === null) return;
+
+      const ok = confirm(
+        `¿Anular venta ${saleId}?\n\n` +
+        `Esto:\n` +
+        `- Revierte stock (Kardex IN)\n` +
+        `- Ajusta caja diaria si correspondía\n` +
+        `- Marca la venta como ANULADA`
+      );
+      if(!ok) return;
+
+      try{
+        const updated = App.voidSale({ saleId, reason, note });
+        App.toast(updated.voidCashAdjusted ? "Venta anulada (caja ajustada)" : "Venta anulada");
+        refresh();
+      }catch(err){
+        App.toast(err.message || "Error al anular");
+      }
+    }
+
+    function csvEscape(v){
+      const s = String(v ?? "");
+      if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    function exportCSV(list){
+      const rows = [];
+      rows.push([
+        "Fecha","VentaID","Producto","Cantidad","PrecioUnit","SubtotalItem","DescuentoVenta","TotalVenta",
+        "PagoEfectivo","PagoMP","PagoDNI","PagoTarjeta","Anulada","AnuladaEn","Motivo","AnuladaPor"
+      ]);
+
+      list.forEach(s=>{
+        const p = s.payments || {};
+        const dt = new Date(s.createdAt).toLocaleString("es-AR");
+        (s.items||[]).forEach(it=>{
+          const qty = App.num(it.qty);
+          const price = App.num(it.price);
+
+          rows.push([
+            dt,
+            s.id,
+            it.name,
+            App.roundQty(qty),
+            price,
+            App.num(qty * price),
+            App.num(s.discount),
+            App.num(s.total),
+            App.num(p.cash),
+            App.num(p.mp),
+            App.num(p.dni),
+            App.num(p.card),
+            s.voided ? "SI" : "NO",
+            s.voidedAt || "",
+            s.voidReason || "",
+            s.voidedBy || ""
+          ]);
+        });
+      });
+
+      const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      const mode = modeEl.value === "DAY" ? (dateEl.value || ymd(new Date())) : (monthEl.value || ym(new Date()));
+      a.href = url;
+      a.download = `reporte_${modeEl.value.toLowerCase()}_${mode}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function refresh(){
+      const list = getFilteredSales().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+      const listInclVoided = getFilteredSalesIncludingVoided().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+
+      renderKPIs(list);
+      renderSalesTable(listInclVoided);
+      renderTopProducts(list);
+
+      return listInclVoided;
+    }
+
+    function toggleMode(){
+      if(modeEl.value === "DAY"){
+        monthBox.style.display = "none";
+        dayBox.style.display = "";
+      }else{
+        monthBox.style.display = "";
+        dayBox.style.display = "none";
+      }
+    }
+
+    dateEl.value = ymd(new Date());
+    monthEl.value = ym(new Date());
+
+    modeEl.addEventListener("change", ()=>{ toggleMode(); refresh(); });
+    btnRefresh.addEventListener("click", refresh);
+    qEl.addEventListener("input", refresh);
+    btnExport.addEventListener("click", ()=> exportCSV(refresh()));
+
+    toggleMode();
+    refresh();
+  </script>
 </body>
 </html>

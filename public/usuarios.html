@@ -19,7 +19,7 @@
     </div>
     <div class="row">
       <a class="btn" href="./index.html">Volver</a>
-      <button class="btn btn--danger" id="btnLogout">Cerrar sesión</button>
+      <button class="btn btn--danger" id="btnLogout" type="button">Cerrar sesión</button>
     </div>
   </div>
 </header>
@@ -68,8 +68,8 @@
     <section class="section" style="margin-top:14px">
       <h3 style="margin:0 0 10px">Reset usuarios (solo si te trabaste)</h3>
       <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn" id="btnResetUsers">Recrear Dueño/Admin/Vendedor</button>
-        <div class="muted">Borra usuarios actuales y vuelve a defaults del app.js.</div>
+        <button class="btn" id="btnResetUsers" type="button">Recrear Dueño/Admin/Vendedor</button>
+        <div class="muted">Borra usuarios actuales.</div>
       </div>
     </section>
   </section>
@@ -79,7 +79,6 @@
 <script src="./js/app.js"></script>
 <script>
 (() => {
-  // ========= helpers UI =========
   const errorBox = document.getElementById("errorBox");
   const errorMsg = document.getElementById("errorMsg");
   const noAccess = document.getElementById("noAccess");
@@ -101,32 +100,11 @@
     return role;
   }
 
-  // ========= localStorage (users) =========
-  const USERS_KEY = "almacen_users_v1";
-
-  function getUsers(){
-    try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
-    catch { return []; }
-  }
-  function setUsers(list){
-    localStorage.setItem(USERS_KEY, JSON.stringify(list));
-  }
-
-  // hash compatible con app.js
-  function pinHash(pin){
-    const s = String(pin || "").trim();
-    let h = 0;
-    for(let i=0;i<s.length;i++){
-      h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    }
-    return "h" + h.toString(16);
-  }
-
   function render(){
     const me = App.getMe();
     meEl.textContent = me ? `${me.name} (${roleLabel(me.role)})` : "Sin sesión";
 
-    const users = getUsers();
+    const users = App.getUsers();
     tbody.innerHTML = "";
 
     users.forEach(u => {
@@ -140,8 +118,8 @@
         <td>${active ? "Activo" : "Inactivo"}</td>
         <td>
           <div class="row" style="gap:8px;flex-wrap:wrap">
-            <button class="btn" data-pin="${u.id}">Cambiar PIN</button>
-            <button class="btn ${active ? "btn--danger" : "btn--ok"}" data-toggle="${u.id}" ${isOwner ? "disabled" : ""}>
+            <button class="btn" data-pin="${u.id}" type="button">Cambiar PIN</button>
+            <button class="btn ${active ? "btn--danger" : "btn--ok"}" data-toggle="${u.id}" type="button" ${isOwner ? "disabled" : ""}>
               ${active ? "Desactivar" : "Activar"}
             </button>
           </div>
@@ -150,11 +128,10 @@
       tbody.appendChild(tr);
     });
 
-    // cambiar PIN
     tbody.querySelectorAll("button[data-pin]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const id = btn.dataset.pin;
-        const users = getUsers();
+        const users = App.getUsers();
         const u = users.find(x => x.id === id);
         if(!u) return App.toast("Usuario no encontrado");
 
@@ -162,38 +139,33 @@
         if(pin1 === null) return;
         const pin = String(pin1).trim();
 
-        if(pin.length < 4) return App.toast("PIN muy corto (mínimo 4)");
-        if(!/^\d+$/.test(pin)) return App.toast("PIN debe ser numérico");
-
-        u.pin = pinHash(pin);
-        setUsers(users);
-
-        App.toast("PIN actualizado ✅");
+        try{
+          App.updateUserPin(id, pin);
+          App.toast("PIN actualizado ✅");
+          render();
+        }catch(err){
+          App.toast(err.message || "Error");
+        }
       });
     });
 
-    // activar/desactivar
     tbody.querySelectorAll("button[data-toggle]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const id = btn.dataset.toggle;
-        const users = getUsers();
-        const u = users.find(x => x.id === id);
-        if(!u) return App.toast("Usuario no encontrado");
-        if(u.role === "owner") return App.toast("No podés desactivar al Dueño");
-
-        u.active = !(u.active !== false);
-        setUsers(users);
-
-        App.toast(u.active ? "Activado ✅" : "Desactivado ✅");
-        render();
+        try{
+          const active = App.toggleUserActive(id);
+          App.toast(active ? "Activado ✅" : "Desactivado ✅");
+          render();
+        }catch(err){
+          App.toast(err.message || "Error");
+        }
       });
     });
   }
 
   try{
-    // Botón cerrar SIEMPRE (aunque no sea dueño)
     document.getElementById("btnLogout").addEventListener("click", ()=>{
-      App?.logout?.();
+      App.logout();
       location.href = "./login.html?next=usuarios.html";
     });
 
@@ -205,8 +177,6 @@
     App.ensureAuthSeed();
 
     const me = App.getMe();
-
-    // Si no hay sesión
     if(!me){
       noAccess.style.display = "";
       panel.style.display = "none";
@@ -214,30 +184,29 @@
       return;
     }
 
-    // Si no es dueño (ej: vendedor)
     if(me.role !== "owner"){
       noAccess.style.display = "";
       panel.style.display = "none";
       errorBox.style.display = "none";
-      // Mostramos quién está logueado
       const txt = document.querySelector("#noAccess .muted");
       if(txt) txt.innerHTML = `Estás logueado como <strong>${me.name}</strong> (${roleLabel(me.role)}). Esta sección es solo para <strong>Dueño</strong>.`;
       return;
     }
 
-    // Dueño OK
     panel.style.display = "";
     noAccess.style.display = "none";
     errorBox.style.display = "none";
     render();
 
-    // Reset usuarios
     document.getElementById("btnResetUsers").addEventListener("click", ()=>{
-      if(!confirm("¿Recrear usuarios default? (perdés cambios)")) return;
-      localStorage.removeItem("almacen_users_v1");
-      localStorage.removeItem("almacen_session_v1");
-      App.toast("Usuarios reseteados ✅");
-      location.reload();
+      if(!confirm("¿Recrear usuarios default? (perdés cambios y se cierra sesión)")) return;
+      try{
+        App.resetUsersToDefault();
+        App.toast("Usuarios reseteados ✅");
+        location.href = "./login.html?next=usuarios.html";
+      }catch(err){
+        App.toast(err.message || "Error");
+      }
     });
 
   }catch(err){
@@ -245,6 +214,9 @@
     console.error(err);
   }
 })();
+
+
 </script>
 
- 
+</body>
+</html>

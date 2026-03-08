@@ -23,6 +23,8 @@
         <a class="btn" href="./index.html">Volver</a>
         <a class="btn btn--primary" href="./entradas.html">Ir a Entradas</a>
         <a class="btn" href="./productos.html">Productos</a>
+        <!-- BOTÓN / LINK: Cambiar usuario (PIN) -->
+<a class="btn" href="#" id="btnCambiarUsuario">Cambiar usuario (PIN)</a>
       </div>
     </div>
   </header>
@@ -135,6 +137,42 @@
 
     render();
     q.focus();
+
+
+  (function wirePinButton(){
+    function bind(){
+      var el = document.getElementById("btnCambiarUsuario");
+      if(!el) return;
+
+      // evitar doble bind si se pega 2 veces
+      if(el.__boundPinBtn) return;
+      el.__boundPinBtn = true;
+
+      el.addEventListener("click", function(e){
+        e.preventDefault();
+
+        if(!confirm("¿Cambiar de usuario (volver a PIN)?")) return;
+
+        try{
+          if(window.App && typeof App.logout === "function"){
+            App.logout();
+          }else{
+            localStorage.removeItem("almacen_session_v1");
+          }
+        }catch(_e){}
+
+        var next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+        location.href = "./login.html?next=" + next;
+      });
+    }
+
+    // por si el script corre antes que el DOM
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", bind);
+    }else{
+      bind();
+    }
+  })();
   </script>
 </body>
 </html>

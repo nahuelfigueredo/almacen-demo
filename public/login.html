@@ -4,109 +4,146 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ingresar</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="./css/auth.css">
 </head>
-<body>
-<header class="top">
-  <div class="wrap top__inner">
-    <div class="brand">
-      <div class="brand__logo">A</div>
-      <div>
-        <div class="brand__name">Ingresar</div>
-        <div class="brand__sub">PIN + rol</div>
+
+<body class="auth-page bg-logo">
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">A</div>
+        <div>
+          <div class="brand__name">Ingresar con PIN</div>
+          <div class="brand__sub">Dueño / Admin / Vendedora</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <a class="btn" href="./index.html">Volver</a>
       </div>
     </div>
-    <div class="row">
-      <a class="btn" href="./index.html">Inicio</a>
-    </div>
-  </div>
-</header>
+  </header>
 
-<main class="wrap" style="max-width:520px">
-  <section class="section">
-    <h3>PIN</h3>
-    <div class="muted" style="margin-bottom:10px">
-      Admin y Cajero tienen permisos distintos.
-    </div>
+  <main class="wrap auth-center" style="max-width:520px">
+    <section class="section">
+      <h2 style="margin:0 0 10px">PIN</h2>
+      <div class="muted" style="margin-bottom:12px" id="nextLbl">—</div>
 
-    <label>Ingresá tu PIN</label>
-    <input id="pin" type="password" inputmode="numeric" placeholder="****" />
-
-    <div class="row" style="margin-top:12px">
-      <button class="btn btn--primary" id="btnLogin" style="flex:1">Entrar</button>
-      <button class="btn" id="btnLogout">Salir</button>
-    </div>
-
-    <div class="section" style="padding:10px;margin-top:12px">
-      <div class="muted" id="state">—</div>
-      <div class="muted" style="margin-top:6px">
-        Defaults (cambiables en app.js): Admin <strong>1234</strong> • Cajero <strong>0000</strong>
+      <div class="row" style="gap:10px;align-items:end;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <label for="pin">Ingresá tu PIN</label>
+          <input id="pin" class="pin-input" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••" />
+        </div>
+        <button class="btn btn--primary" id="btnLogin" type="button">Entrar</button>
       </div>
-    </div>
-  </section>
-</main>
 
-<script src="./js/app.js"></script>
-<script>
-  App.ensureAuthSeed();
+      <div class="muted" style="margin-top:10px">
+        Enter para ingresar.
+      </div>
 
-  const pin = document.getElementById("pin");
-  const state = document.getElementById("state");
+      <div class="section" style="margin-top:14px;padding:12px" id="meBox" hidden>
+        <div class="muted">Ya hay una sesión activa</div>
+        <div style="margin-top:6px"><strong id="meLbl">—</strong></div>
+        <div class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+          <button class="btn btn--danger" id="btnLogout" type="button">Cerrar sesión</button>
+          <button class="btn" id="btnContinue" type="button">Continuar</button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  const params = new URLSearchParams(location.search);
-  const next = params.get("next") || "index.html";
+  <script src="./js/app.js"></script>
+  <script>
+    App.ensureAuthSeed();
 
-  // ✅ Prospect ID para tracking: login.html?pid=almacen-los-pinos
-  const pid = params.get("pid");
-  if (pid) localStorage.setItem("demo_prospect_id", pid);
-
-  function render(){
-    const me = App.getMe();
-    state.innerHTML = me
-      ? `Sesión activa: <strong>${me.name}</strong> • Rol: <strong>${me.role}</strong>`
-      : "Sin sesión activa.";
-  }
-
-  async function trackLogin(){
-    const me = App.getMe();
-    const prospectId = localStorage.getItem("demo_prospect_id") || "public-demo";
-    try{
-      await fetch("/api/track/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prospectId,
-          role: me?.role || "unknown",
-          name: me?.name || "unknown"
-        })
-      });
-    }catch(e){
-      // silencioso (no queremos romper el login si falla el tracking)
+    function roleLabel(role){
+      if(role === "owner") return "Dueño";
+      if(role === "admin") return "Admin";
+      if(role === "seller") return "Vendedora";
+      return role || "-";
     }
-  }
 
-  document.getElementById("btnLogin").onclick = async () => {
-    const r = App.loginWithPin(pin.value);
-    if(!r.ok) return App.toast(r.message);
+    const pin = document.getElementById("pin");
+    const btnLogin = document.getElementById("btnLogin");
 
-    // ✅ track del login
-    await trackLogin();
+    const meBox = document.getElementById("meBox");
+    const meLbl = document.getElementById("meLbl");
+    const btnLogout = document.getElementById("btnLogout");
+    const btnContinue = document.getElementById("btnContinue");
 
-    App.toast("Ingresado ✅");
-    location.replace("./" + next);
-  };
+    // ✅ si no viene next, mandamos según el rol (seller -> caja)
+    const params = new URLSearchParams(location.search);
+    const nextParam = params.get("next"); // puede venir null
 
-  document.getElementById("btnLogout").onclick = () => {
-    App.logout();
-    App.toast("Sesión cerrada");
-    render();
-  };
+    function defaultNextFor(me){
+      if(me?.role === "seller") return "caja.html";
+      return "index.html"; // admin/owner
+    }
 
-  pin.addEventListener("keydown",(e)=>{
-    if(e.key === "Enter") document.getElementById("btnLogin").click();
-  });
+    function targetFromSession(){
+      const me = App.getMe();
+      return nextParam || defaultNextFor(me);
+    }
 
-  render();
-  pin.focus();
-</script>
+    function goNext(){
+      const target = targetFromSession();
+      location.replace("./" + String(target).replace(/^\.\//, ""));
+    }
+
+    document.getElementById("nextLbl").textContent =
+      `Al ingresar vas a ir a: ${nextParam || "según tu usuario"}`;
+
+    function renderSessionBox(){
+      const me = App.getMe();
+      if(!me){
+        meBox.hidden = true;
+        return;
+      }
+      meLbl.textContent = `${me.name} (${roleLabel(me.role)})`;
+      meBox.hidden = false;
+
+      // ✅ cuando ya hay sesión, mostrale a dónde va a continuar
+      document.getElementById("nextLbl").textContent =
+        `Al ingresar vas a ir a: ${targetFromSession()}`;
+    }
+
+    function doLogin(){
+      const res = App.loginWithPin(pin.value);
+      if(!res.ok){
+        App.toast(res.message || "PIN incorrecto");
+        pin.focus();
+        pin.select();
+        return;
+      }
+      App.toast("Ingreso OK");
+      goNext();
+    }
+
+    btnLogin.addEventListener("click", doLogin);
+    pin.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        doLogin();
+      }
+    });
+
+    btnLogout.addEventListener("click", ()=>{
+      App.logout();
+      App.toast("Sesión cerrada");
+      renderSessionBox();
+      pin.focus();
+    });
+
+    btnContinue.addEventListener("click", goNext);
+
+    renderSessionBox();
+    setTimeout(()=>pin.focus(), 60);
+  </script>
+</body>
 </html>

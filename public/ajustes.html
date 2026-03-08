@@ -4,69 +4,90 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ajustes de stock</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/styles.css">
-<script src="./js/app.js"></script>
-
-
+  <link rel="icon" href="data:,">
 </head>
+
 <body>
   <header class="top">
     <div class="wrap top__inner">
       <div class="brand">
-        <div class="brand__logo">A</div>
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 21v-9" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
         <div>
           <div class="brand__name">Ajustes de stock</div>
           <div class="brand__sub">Rotura • Vencido • Inventario • Error</div>
         </div>
       </div>
+
       <div class="row">
         <a class="btn" href="./index.html">Volver</a>
         <a class="btn btn--primary" href="./movimientos.html">Ver Kardex</a>
-        <button class="btn btn--primary" id="btnFocusScan">Escanear <span class="kbd">F2</span></button>
+        <button class="btn btn--primary" id="btnFocusScan" type="button">
+          Escanear <span class="kbd">F2</span>
+        </button>
+
+        <!-- ✅ Botón rápido a PIN (cambiar usuario) -->
+        <a class="btn" href="#" id="btnCambiarUsuario" title="Cambiar usuario / volver a PIN">PIN</a>
       </div>
     </div>
   </header>
 
+  <!-- Split SOLO para selección + aplicar -->
   <main class="wrap split">
     <!-- LEFT -->
     <section class="section">
-      <h3>Seleccionar producto</h3>
+      <div class="section__head">
+        <h3 class="section__title">Seleccionar producto</h3>
+        <div class="muted">Buscar o escanear</div>
+      </div>
 
       <div class="row" style="margin-bottom:10px;">
         <div style="flex:1;min-width:260px">
-          <label>Buscar por nombre</label>
+          <label for="qName">Buscar por nombre</label>
           <input id="qName" placeholder="Ej: azúcar, coca, queso..." autocomplete="off" />
-          <div class="muted" style="margin-top:6px">
+          <div class="muted mt-8">
             Tip: <span class="kbd">F2</span> para escanear (USB) y Enter selecciona.
           </div>
         </div>
       </div>
 
-      <div class="section" style="padding:10px;margin-top:12px">
-        <div class="row" style="justify-content:space-between">
+      <div class="section pos-box">
+        <div class="pos-box__head">
           <strong>Producto seleccionado</strong>
           <small class="muted">Click en resultados</small>
         </div>
         <div id="selected" class="muted" style="margin-top:8px">—</div>
       </div>
 
-      <div class="section" style="padding:10px;margin-top:12px">
-        <div class="row" style="justify-content:space-between">
+      <div class="section pos-box">
+        <div class="pos-box__head">
           <strong>Resultados</strong>
           <small class="muted">Máx 10</small>
         </div>
-        <div id="results" style="margin-top:8px"></div>
+        <div id="results" class="pos-results"></div>
       </div>
 
-      <!-- Hidden scanner input -->
-      <input id="scanInput" style="position:fixed;left:-9999px;opacity:0" autocomplete="off" />
+      <input id="scanInput" class="scan-input" autocomplete="off" />
     </section>
 
     <!-- RIGHT -->
     <aside class="section">
-      <h3>Aplicar ajuste</h3>
+      <div class="section__head">
+        <h3 class="section__title">Aplicar ajuste</h3>
+        <div class="muted">Se registra como ADJ en Kardex</div>
+      </div>
 
-      <label>Modo de ajuste</label>
+      <label for="mode">Modo de ajuste</label>
       <select id="mode">
         <option value="DELTA">Ajustar por diferencia (+ / -)</option>
         <option value="SET">Setear stock exacto (inventario físico)</option>
@@ -74,17 +95,17 @@
 
       <div class="row" style="margin-top:10px">
         <div style="flex:1" id="deltaBox">
-          <label>Diferencia (delta) con decimales</label>
-          <input id="delta" type="number" step="0.001" value="0.000" />
-          <div class="muted" style="margin-top:6px">
+          <label for="delta">Diferencia (delta) con decimales</label>
+          <input id="delta" type="number" step="0.001" value="0.000" inputmode="decimal" />
+          <div class="muted mt-8">
             Ej: <strong>+2.500</strong> suma / <strong>-1.000</strong> resta
           </div>
         </div>
 
         <div style="flex:1; display:none" id="setBox">
-          <label>Stock real (nuevo stock)</label>
-          <input id="newStock" type="number" step="0.001" min="0" value="0.000" />
-          <div class="muted" style="margin-top:6px">
+          <label for="newStock">Stock real (nuevo stock)</label>
+          <input id="newStock" type="number" step="0.001" min="0" value="0.000" inputmode="decimal" />
+          <div class="muted mt-8">
             Se calcula la diferencia y se registra como ajuste.
           </div>
         </div>
@@ -92,7 +113,7 @@
 
       <div class="row" style="margin-top:10px">
         <div style="flex:1">
-          <label>Motivo</label>
+          <label for="reason">Motivo</label>
           <select id="reason">
             <option value="Rotura">Rotura</option>
             <option value="Vencido">Vencido</option>
@@ -102,18 +123,20 @@
           </select>
         </div>
         <div style="flex:1">
-          <label>Nota (opcional)</label>
+          <label for="note">Nota (opcional)</label>
           <input id="note" placeholder="Ej: se rompieron 2 latas" />
         </div>
       </div>
 
-      <div class="row" style="margin-top:12px">
-        <button class="btn btn--danger" id="btnApply" style="flex:1">Aplicar ajuste <span class="kbd">F9</span></button>
+      <div class="actions">
+        <button class="btn btn--danger" id="btnApply" type="button" style="flex:1">
+          Aplicar ajuste <span class="kbd">F9</span>
+        </button>
       </div>
 
-      <div class="section" style="padding:10px;margin-top:12px">
+      <div class="section pos-box">
         <strong>Tips</strong>
-        <div class="muted" style="margin-top:6px">
+        <div class="muted mt-8">
           • Ajustes quedan en Kardex como <strong>ADJ</strong><br/>
           • Usá “Setear stock exacto” cuando contás mercadería
         </div>
@@ -121,167 +144,419 @@
     </aside>
   </main>
 
+  <!-- Backups FUERA del split, ancho completo -->
+  <section class="wrap">
+    <section class="section">
+      <div class="section__head">
+        <div>
+          <h3 class="section__title">Backups</h3>
+          <div class="muted">Exportá e importá todos los datos (productos, ventas, stock, usuarios, licencia).</div>
+        </div>
+      </div>
+
+      <div class="row" style="gap:10px;flex-wrap:wrap">
+        <button class="btn btn--primary" id="btnBackupExport" type="button">Exportar JSON</button>
+
+        <label class="btn" for="backupFile" style="cursor:pointer">
+          Importar JSON
+        </label>
+        <input id="backupFile" type="file" accept="application/json" style="display:none" />
+
+        <button class="btn" id="btnBackupRestoreLast" type="button" disabled title="Restaura el auto-backup guardado antes de la última importación">
+          Restaurar último auto-backup
+        </button>
+
+        <button class="btn btn--danger" id="btnBackupWipe" type="button" title="Borra localStorage de la app">
+          Borrar datos (reset)
+        </button>
+
+        <!-- ✅ EXTRA: Exportar ventas / limpiar ventas (para que no se llene el localStorage) -->
+        <button class="btn" id="btnExportSales" type="button" title="Descarga ventas en JSON">
+          Exportar ventas
+        </button>
+
+        <button class="btn" id="btnTrimSales" type="button" title="Mantiene solo las ventas más recientes">
+          Limpiar ventas viejas
+        </button>
+      </div>
+
+      <div class="muted mt-10" id="backupInfo">—</div>
+    </section>
+  </section>
+
   <script src="./js/app.js"></script>
 
   <script>
-    App.guardPage(App.PERMS.admin_or_owner);
+    // Boot seguro (por si el browser tarda en ejecutar app.js)
+    (function boot(){
+      if(!window.App) return setTimeout(boot, 20);
 
+      // ✅ permitir también Vendedor (seller)
+      App.guardPage(App.PERMS.seller_admin_owner);
 
-    window.App.ensureSeed();
+      // ✅ demo seed + usuarios seed
+      App.ensureAuthSeed();
+      App.ensureSeed();
 
-    const qName = document.getElementById("qName");
-    const results = document.getElementById("results");
-    const selected = document.getElementById("selected");
-    const scanInput = document.getElementById("scanInput");
+      // =============================
+      // PIN rápido (cambiar usuario)
+      // =============================
+      (function wirePinBtn(){
+        var btn = document.getElementById("btnCambiarUsuario");
+        if(!btn) return;
+        if(btn.__bound) return;
+        btn.__bound = true;
 
-    const mode = document.getElementById("mode");
-    const deltaBox = document.getElementById("deltaBox");
-    const setBox = document.getElementById("setBox");
-    const deltaEl = document.getElementById("delta");
-    const newStockEl = document.getElementById("newStock");
-    const reasonEl = document.getElementById("reason");
-    const noteEl = document.getElementById("note");
+        btn.addEventListener("click", function(e){
+          e.preventDefault();
+          try{ App.logout(); }catch(_e){}
+          var next = encodeURIComponent(location.pathname.split("/").pop() || "index.html");
+          location.href = "./login.html?next=" + next;
+        });
+      })();
 
-    let selectedProductId = null;
+      const qName = document.getElementById("qName");
+      const results = document.getElementById("results");
+      const selected = document.getElementById("selected");
+      const scanInput = document.getElementById("scanInput");
 
-    function setSelected(p){
-      selectedProductId = p?.id || null;
-      if(!p){
-        selected.textContent = "—";
-        return;
-      }
-      selected.innerHTML = `
-        <strong>${p.name}</strong><br/>
-        <small>Cat: ${p.category || "-"} • Stock actual: ${App.roundQty(p.stock)} • Mín: ${App.roundQty(p.minStock||0)}</small><br/>
-        <small>Código: ${p.barcode || "-"}</small>
-      `;
-      // en modo SET, prellenar con stock actual para editar rápido
-      newStockEl.value = App.roundQty(p.stock);
-    }
+      const mode = document.getElementById("mode");
+      const deltaBox = document.getElementById("deltaBox");
+      const setBox = document.getElementById("setBox");
+      const deltaEl = document.getElementById("delta");
+      const newStockEl = document.getElementById("newStock");
+      const reasonEl = document.getElementById("reason");
+      const noteEl = document.getElementById("note");
 
-    function renderResults(list){
-      results.innerHTML = "";
-      const box = document.createElement("div");
-      box.style.display = "grid";
-      box.style.gridTemplateColumns = "1fr";
-      box.style.gap = "8px";
+      let selectedProductId = null;
 
-      list.slice(0, 10).forEach(p => {
-        const btn = document.createElement("button");
-        btn.className = "btn";
-        btn.style.textAlign = "left";
-        btn.innerHTML = `
-          <div style="display:flex;justify-content:space-between;gap:10px">
-            <div>
-              <strong>${p.name}</strong>
-              <div><small>${p.category || "Sin categoría"} • Stock: ${App.roundQty(p.stock)}</small></div>
-            </div>
-            <div style="white-space:nowrap"><small>${p.barcode || ""}</small></div>
-          </div>
+      function setSelected(p){
+        // ❌ quitamos optional chaining para máxima compatibilidad
+        selectedProductId = (p && p.id) ? p.id : null;
+        if(!p){
+          selected.textContent = "—";
+          return;
+        }
+        selected.innerHTML = `
+          <strong>${p.name}</strong><br/>
+          <small>Cat: ${p.category || "-"} • Stock actual: ${App.roundQty(p.stock)} • Mín: ${App.roundQty(p.minStock||0)}</small><br/>
+          <small>Código: ${p.barcode || "-"}</small>
         `;
-        btn.onclick = () => {
-          setSelected(p);
-          App.toast("Producto seleccionado");
-        };
-        box.appendChild(btn);
-      });
-
-      if(!list.length){
-        const empty = document.createElement("div");
-        empty.className = "muted";
-        empty.textContent = "Sin resultados.";
-        box.appendChild(empty);
+        newStockEl.value = App.roundQty(p.stock);
       }
-      results.appendChild(box);
 
-      setSelected(list[0] || null);
-    }
+      function renderResults(list){
+        results.innerHTML = "";
+        const show = list.slice(0, 10);
 
-    function updateResults(){
-      renderResults(App.searchProductsByName(qName.value));
-    }
+        show.forEach(p => {
+          const btn = document.createElement("button");
+          btn.className = "btn pos-result";
+          btn.type = "button";
+          btn.innerHTML = `
+            <span class="pos-result__name">${p.name}</span>
+            <span class="pos-result__meta">${p.category || "Sin categoría"} • Stock: ${App.roundQty(p.stock)} • ${p.barcode || ""}</span>
+          `;
+          btn.onclick = () => {
+            setSelected(p);
+            App.toast("Producto seleccionado");
+          };
+          results.appendChild(btn);
+        });
 
-    function focusScan(){
-      scanInput.value = "";
-      scanInput.focus();
-      App.toast("Listo para escanear (Enter selecciona)");
-    }
-
-    scanInput.addEventListener("keydown", (e)=>{
-      if(e.key === "Enter"){
-        e.preventDefault();
-        const code = scanInput.value.trim();
-        const p = App.findProductByBarcode(code);
-        if(!p) return App.toast("Código no encontrado");
-        setSelected(p);
-        App.toast("Seleccionado por código ✅");
-        focusScan();
-      }
-    });
-
-    document.getElementById("btnFocusScan").onclick = focusScan;
-
-    function toggleMode(){
-      const m = mode.value;
-      if(m === "DELTA"){
-        deltaBox.style.display = "";
-        setBox.style.display = "none";
-      }else{
-        deltaBox.style.display = "none";
-        setBox.style.display = "";
-      }
-    }
-    mode.addEventListener("change", toggleMode);
-
-    function applyAdjust(){
-      if(!selectedProductId) return App.toast("Seleccioná un producto");
-
-      const reason = reasonEl.value;
-      const note = noteEl.value.trim();
-      const msg = `${reason}. ${note}`.trim();
-
-      try{
-        if(mode.value === "DELTA"){
-          const d = Number(deltaEl.value);
-          const mv = App.recordStockDelta({
-            productId: selectedProductId,
-            delta: d,
-            note: msg,
-            refType: "ADJUST",
-            refId: ""
-          });
-          App.toast(`Ajuste aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)}) ✅`);
-        }else{
-          const ns = Number(newStockEl.value);
-          const mv = App.recordStockSet({
-            productId: selectedProductId,
-            newStock: ns,
-            note: msg,
-            refType: "INVENTORY",
-            refId: ""
-          });
-          App.toast(`Inventario aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)}) ✅`);
+        if(!show.length){
+          const empty = document.createElement("div");
+          empty.className = "muted";
+          empty.textContent = "Sin resultados.";
+          results.appendChild(empty);
         }
 
-        // refrescar seleccionado (stock cambió)
-        setSelected(App.findProductById(selectedProductId));
-      }catch(err){
-        App.toast(err.message || "Error");
+        setSelected(show[0] || null);
       }
-    }
 
-    document.getElementById("btnApply").onclick = applyAdjust;
+      function updateResults(){
+        renderResults(App.searchProductsByName(qName.value));
+      }
 
-    document.addEventListener("keydown",(e)=>{
-      if(e.key === "F2"){ e.preventDefault(); focusScan(); }
-      if(e.key === "F9"){ e.preventDefault(); applyAdjust(); }
-    });
+      function focusScan(){
+        scanInput.value = "";
+        scanInput.focus();
+        App.toast("Listo para escanear (Enter selecciona)");
+      }
 
-    qName.addEventListener("input", updateResults);
+      scanInput.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter"){
+          e.preventDefault();
+          const code = scanInput.value.trim();
+          const p = App.findProductByBarcode(code);
+          if(!p) return App.toast("Código no encontrado");
+          setSelected(p);
+          App.toast("Seleccionado por código");
+          focusScan();
+        }
+      });
 
-    toggleMode();
-    updateResults();
-    qName.focus();
+      document.getElementById("btnFocusScan").onclick = focusScan;
+
+      function toggleMode(){
+        if(mode.value === "DELTA"){
+          deltaBox.style.display = "";
+          setBox.style.display = "none";
+        }else{
+          deltaBox.style.display = "none";
+          setBox.style.display = "";
+        }
+      }
+      mode.addEventListener("change", toggleMode);
+
+      function applyAdjust(){
+        if(!selectedProductId) return App.toast("Seleccioná un producto");
+
+        const reason = reasonEl.value;
+        const note = noteEl.value.trim();
+        const msg = `${reason}. ${note}`.trim();
+
+        try{
+          if(mode.value === "DELTA"){
+            const d = Number(deltaEl.value);
+            const mv = App.recordStockDelta({
+              productId: selectedProductId,
+              delta: d,
+              note: msg,
+              refType: "ADJUST",
+              refId: ""
+            });
+            App.toast(`Ajuste aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)})`);
+          }else{
+            const ns = Number(newStockEl.value);
+            const mv = App.recordStockSet({
+              productId: selectedProductId,
+              newStock: ns,
+              note: msg,
+              refType: "INVENTORY",
+              refId: ""
+            });
+            App.toast(`Inventario aplicado (${mv.delta > 0 ? "+" : ""}${App.roundQty(mv.delta)})`);
+          }
+
+          setSelected(App.findProductById(selectedProductId));
+        }catch(err){
+          App.toast((err && err.message) ? err.message : "Error");
+        }
+      }
+
+      document.getElementById("btnApply").onclick = applyAdjust;
+
+      document.addEventListener("keydown",(e)=>{
+        if(e.key === "F2"){ e.preventDefault(); focusScan(); }
+        if(e.key === "F9"){ e.preventDefault(); applyAdjust(); }
+      });
+
+      qName.addEventListener("input", updateResults);
+
+      toggleMode();
+      updateResults();
+      qName.focus();
+
+      // =========================
+      // Backup/Restore (JSON)
+      // =========================
+      const BACKUP = {
+        LAST_KEY: "almacen_backup_last_v1",
+        keys: {
+          PRODUCTS: "almacen_products_v1",
+          SALES: "almacen_sales_v1",
+          CASH: "almacen_cash_v1",
+          STOCK_ENTRIES: "almacen_stock_entries_v1",
+          PRICE_CHANGES: "almacen_price_changes_v1",
+          STOCK_MOVES: "almacen_stock_moves_v1",
+          AUTH_USERS: "almacen_users_v1",
+          AUTH_SESSION: "almacen_session_v1",
+          LICENSE: "almacen_license_v1",
+        }
+      };
+
+      function _safeParse(raw){
+        try{ return JSON.parse(raw); }catch{ return null; }
+      }
+      function _download(filename, text, mime="application/json;charset=utf-8"){
+        const blob = new Blob([text], {type:mime});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+      function _ts(){
+        const d = new Date();
+        const pad = (n)=>String(n).padStart(2,"0");
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+      }
+
+      function buildBackupRaw(){
+        const data = {};
+        Object.entries(BACKUP.keys).forEach(([name,key])=>{
+          data[name] = localStorage.getItem(key);
+        });
+        return {
+          app: "ALMACEN-APP",
+          version: 1,
+          createdAt: new Date().toISOString(),
+          data
+        };
+      }
+
+      function exportBackup(){
+        const payload = buildBackupRaw();
+        const filename = `almacen-backup_${_ts()}.json`;
+        _download(filename, JSON.stringify(payload, null, 2));
+        App.toast("Backup exportado");
+        renderBackupInfo();
+      }
+
+      function validateBackup(obj){
+        if(!obj || typeof obj !== "object") return {ok:false, message:"Archivo inválido"};
+        if(obj.app !== "ALMACEN-APP") return {ok:false, message:"No parece un backup de ALMACEN-APP"};
+        if(!obj.data || typeof obj.data !== "object") return {ok:false, message:"Backup sin data"};
+        if(!("PRODUCTS" in obj.data)) return {ok:false, message:"Backup incompleto (sin PRODUCTS)"};
+        return {ok:true};
+      }
+
+      function saveLastBackup(payload){
+        try{
+          localStorage.setItem(BACKUP.LAST_KEY, JSON.stringify({
+            createdAt: new Date().toISOString(),
+            payload
+          }));
+        }catch{}
+      }
+
+      function importBackup(payload){
+        saveLastBackup(buildBackupRaw());
+
+        const d = payload.data || {};
+        Object.entries(BACKUP.keys).forEach(([name, key])=>{
+          if(!(name in d)) return;
+          const raw = d[name];
+          if(raw === null || raw === undefined) localStorage.removeItem(key);
+          else localStorage.setItem(key, String(raw));
+        });
+
+        localStorage.removeItem(BACKUP.keys.AUTH_SESSION);
+
+        App.toast("Backup importado. Recargando…");
+        renderBackupInfo();
+        setTimeout(()=>location.reload(), 400);
+      }
+
+      function restoreLastAutoBackup(){
+        const last = _safeParse(localStorage.getItem(BACKUP.LAST_KEY));
+        if(!(last && last.payload)) return App.toast("No hay auto-backup para restaurar");
+
+        const ok = confirm("¿Restaurar el último auto-backup guardado antes de la importación? Esto reemplazará los datos actuales.");
+        if(!ok) return;
+
+        importBackup(last.payload);
+      }
+
+      function wipeAppData(){
+        const ok = confirm("¿Borrar TODOS los datos del sistema en este navegador? Esta acción no se puede deshacer.");
+        if(!ok) return;
+
+        Object.values(BACKUP.keys).forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem(BACKUP.LAST_KEY);
+
+        App.toast("Datos borrados. Recargando…");
+        setTimeout(()=>location.reload(), 400);
+      }
+
+      function renderBackupInfo(){
+        const el = document.getElementById("backupInfo");
+        const btnRestore = document.getElementById("btnBackupRestoreLast");
+        if(!el || !btnRestore) return;
+
+        const last = _safeParse(localStorage.getItem(BACKUP.LAST_KEY));
+        const has = !!(last && last.payload);
+
+        btnRestore.disabled = !has;
+
+        if(!has){
+          el.textContent = "Último auto-backup antes de importar: —";
+          return;
+        }
+
+        const dt = last.createdAt ? new Date(last.createdAt).toLocaleString("es-AR") : "—";
+        el.textContent = `Último auto-backup antes de importar: ${dt}`;
+      }
+
+      document.getElementById("btnBackupExport").addEventListener("click", exportBackup);
+
+      document.getElementById("backupFile").addEventListener("change", async (e)=>{
+        const file = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+        if(!file) return;
+
+        try{
+          const text = await file.text();
+          const obj = _safeParse(text);
+          const v = validateBackup(obj);
+          if(!v.ok) return App.toast(v.message);
+
+          const ok = confirm("¿Importar este backup y reemplazar los datos actuales? Se guardará un auto-backup antes.");
+          if(!ok) return;
+
+          importBackup(obj);
+        }catch{
+          App.toast("No se pudo leer el archivo");
+        }finally{
+          e.target.value = "";
+        }
+      });
+
+      document.getElementById("btnBackupRestoreLast").addEventListener("click", restoreLastAutoBackup);
+      document.getElementById("btnBackupWipe").addEventListener("click", wipeAppData);
+
+      renderBackupInfo();
+
+      // =========================
+      // Exportar ventas / limpiar ventas viejas
+      // =========================
+      function downloadJSON(filename, data){
+        _download(filename, JSON.stringify(data, null, 2));
+      }
+
+      function exportSales(){
+        const sales = App.getSales();
+        downloadJSON("ventas_" + new Date().toISOString().slice(0,10) + ".json", sales);
+        App.toast("Ventas exportadas");
+      }
+
+      function trimSales(){
+        const max = Number(prompt("¿Cuántas ventas querés conservar? (Ej: 6000)", "6000") || "0");
+        if(!max || max <= 0) return;
+
+        const raw = localStorage.getItem("almacen_sales_v1") || "[]";
+        let sales = [];
+        try{ sales = JSON.parse(raw); }catch{ sales = []; }
+
+        // Tu estructura es newest-first => conservar primeras N
+        if(sales.length > max){
+          sales.length = max;
+          localStorage.setItem("almacen_sales_v1", JSON.stringify(sales));
+        }
+
+        App.toast("Ventas limpiadas. Quedaron " + sales.length);
+      }
+
+      var btnExportSales = document.getElementById("btnExportSales");
+      if(btnExportSales) btnExportSales.addEventListener("click", exportSales);
+
+      var btnTrimSales = document.getElementById("btnTrimSales");
+      if(btnTrimSales) btnTrimSales.addEventListener("click", trimSales);
+
+    })();
   </script>
 </body>
 </html>

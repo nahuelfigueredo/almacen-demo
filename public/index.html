@@ -4,97 +4,141 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Almacén | Sistema</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/styles.css">
-  <script src="./js/app.js"></script>
-
-
 </head>
+
 <body>
   <header class="top">
     <div class="wrap top__inner">
       <div class="brand">
-        <div class="brand__logo">A</div>
+        <div class="brand__logo" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 21v-9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4 7.5l8 4.5 8-4.5" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
+
         <div>
           <div class="brand__name">Sistema de Almacén</div>
-          <div class="brand__sub">Caja + Stock + Precios</div>
+          <div class="brand__sub">Caja • Stock • Precios • Reportes</div>
         </div>
       </div>
-      <div class="pill">Modo: Mostrador (PC)</div>
+
+      <div class="pill">
+        <span class="pill__dot" aria-hidden="true"></span>
+        <span class="pill__text" id="pillText">Listo</span>
+      </div>
     </div>
   </header>
 
   <main class="wrap grid">
-    <a class="card" href="./caja.html">
+    <a class="card" href="./caja.html" data-roles="owner,admin,seller">
+      <div class="card__icon" aria-hidden="true">🧾</div>
       <h2>Caja (POS)</h2>
       <p>Venta rápida, lector USB, cobro y ticket.</p>
     </a>
 
-    <a class="card" href="./productos.html">
+    <a class="card" href="./productos.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">📦</div>
       <h2>Productos</h2>
       <p>Alta/edición, precios, stock y mínimos.</p>
     </a>
 
-    <a class="card" href="./cierre-caja.html">
+    <a class="card" href="./cierre-caja.html" data-roles="owner,admin,seller">
+      <div class="card__icon" aria-hidden="true">📅</div>
       <h2>Caja diaria</h2>
       <p>Apertura / Cierre y totales por medio de pago.</p>
     </a>
 
-<a class="card" href="./entradas.html">
-  <h2>Entradas de mercadería</h2>
-  <p>Reposición/compra. Suma stock y guarda historial.</p>
-</a>
+    <a class="card" href="./entradas.html" data-roles="owner,admin,seller">
+      <div class="card__icon" aria-hidden="true">⬇️</div>
+      <h2>Entradas de mercadería</h2>
+      <p>Reposición/compra. Suma stock y guarda historial.</p>
+    </a>
 
-<a class="card" href="./precios.html">
-  <h2>Aumentos de precios</h2>
-  <p>Subir precios por % (todos o por categoría) + redondeo.</p>
-</a>
+    <a class="card" href="./precios.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">🏷️</div>
+      <h2>Aumentos de precios</h2>
+      <p>Subir precios por % (todos o por categoría) + redondeo.</p>
+    </a>
 
-<a class="card" href="./bajo-stock.html">
-  <h2>Bajo stock</h2>
-  <p>Productos por reponer (stock ≤ mínimo) + críticos.</p>
-</a>
+    <a class="card" href="./bajo-stock.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">⚠️</div>
+      <h2>Bajo stock</h2>
+      <p>Productos por reponer (stock ≤ mínimo) + críticos.</p>
+    </a>
 
+    <a class="card" href="./movimientos.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">📈</div>
+      <h2>Movimientos (Kardex)</h2>
+      <p>Historial completo de entradas y salidas de stock.</p>
+    </a>
 
-<a class="card" href="./movimientos.html">
-  <h2>Movimientos (Kardex)</h2>
-  <p>Historial completo de entradas y salidas de stock.</p>
-</a>
+    <a class="card" href="./ajustes.html" data-roles="owner,admin,seller">
+      <div class="card__icon" aria-hidden="true">🛠️</div>
+      <h2>Ajustes de stock</h2>
+      <p>Rotura, vencido e inventario físico (ADJ en Kardex).</p>
+    </a>
 
+    <a class="card" href="./reportes.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">📊</div>
+      <h2>Reportes</h2>
+      <p>Ventas por día/mes + pagos + exportar a Excel (CSV).</p>
+    </a>
 
-<a class="card" href="./ajustes.html">
-  <h2>Ajustes de stock</h2>
-  <p>Rotura, vencido e inventario físico (ADJ en Kardex).</p>
-</a>
+    <a class="card" href="./usuarios.html" data-roles="owner">
+      <div class="card__icon" aria-hidden="true">👤</div>
+      <h2>Usuarios</h2>
+      <p>PIN Dueño/Admin/Vendedor (solo Dueño).</p>
+    </a>
 
-<a class="card" href="./reportes.html">
-  <h2>Reportes</h2>
-  <p>Ventas por día/mes + pagos + exportar a Excel (CSV).</p>
-</a>
-
-<a class="card" href="./usuarios.html">
-  <h2>Usuarios</h2>
-  <p>PIN Dueño/Admin/Vendedor (solo Dueño).</p>
-</a>
-
-
-<a class="btn btn--primary" href="./demo.html">Modo DEMO</a>
-
-
-
+    <a class="card" href="./dashboard.html" data-roles="owner,admin">
+      <div class="card__icon" aria-hidden="true">🧭</div>
+      <h2>Dashboard</h2>
+      <p>Estado de caja, totales y últimos cierres.</p>
+    </a>
   </main>
-
 
   <footer class="foot">
     <div class="wrap foot__inner">
-      <small>MCN Digital Studio • Base offline con localStorage (lista para migrar a nube)</small>
+      <small>MCN Digital Studio •</small>
     </div>
   </footer>
 
   <script src="./js/app.js"></script>
 
+
   <script>
-    // Inicializa datos demo una sola vez
-    window.App.ensureSeed();
+    // ✅ obliga sesión: si no hay login, manda a login
+    App.ensureAuthSeed();
+
+    const me = App.getMe();
+
+    if(!me){
+      location.replace("./login.html?next=index.html");
+    }else{
+      const pill = document.getElementById("pillText");
+      if(pill) pill.textContent = `Hola, ${me.name}`;
+
+      // ✅ filtra menú según rol (visual)
+      const role = me.role || "";
+      document.querySelectorAll("a.card[data-roles]").forEach(a=>{
+        const roles = (a.getAttribute("data-roles") || "")
+          .split(",")
+          .map(s=>s.trim())
+          .filter(Boolean);
+
+        if(!roles.includes(role)){
+          a.style.display = "none";
+        }
+      });
+    }
   </script>
 </body>
 </html>
